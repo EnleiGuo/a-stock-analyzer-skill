@@ -975,7 +975,8 @@ def analyze_technical(daily_data, factor_data, cyq_perf_data=None, nineturn_data
 # ─── 基本面分析 ────────────────────────────────────────────────────────────────
 def analyze_fundamental(stock_basic, fina_data, daily_basic, income_data,
                          balancesheet=None, forecast_data=None,
-                         mainbz_data=None, report_rc=None):
+                         mainbz_data=None, report_rc=None,
+                         hist_daily_basic=None):
     """
     多维基本面：盈利/成长/估值/偿债/现金流/运营效率 + 业绩预告/业务构成/券商预测
     """
@@ -1039,6 +1040,18 @@ def analyze_fundamental(stock_basic, fina_data, daily_basic, income_data,
             if cr and pr and pr > 0:
                 rev_trend.append(round((cr - pr) / abs(pr) * 100, 1))
 
+    # 3年CAGR（复合年增长率）
+    rev_cagr, profit_cagr = None, None
+    if income_data and len(income_data) >= 4:  # 至少4期年报才能算3年CAGR
+        r_now  = sf(income_data[0].get("total_revenue"))
+        r_3ago = sf(income_data[3].get("total_revenue"))
+        if r_now and r_3ago and r_3ago > 0 and r_now > 0:
+            rev_cagr = round(((r_now / r_3ago) ** (1/3) - 1) * 100, 2)
+        p_now  = sf(income_data[0].get("n_income"))
+        p_3ago = sf(income_data[3].get("n_income"))
+        if p_now and p_3ago and p_3ago > 0 and p_now > 0:
+            profit_cagr = round(((p_now / p_3ago) ** (1/3) - 1) * 100, 2)
+
     gs = 50
     gs += (20 if rev_yoy and rev_yoy > 30 else 12 if rev_yoy and rev_yoy > 15
            else 5 if rev_yoy and rev_yoy > 5 else 0 if rev_yoy and rev_yoy > 0
@@ -1046,20 +1059,28 @@ def analyze_fundamental(stock_basic, fina_data, daily_basic, income_data,
     gs += (15 if profit_yoy and profit_yoy > 50 else 8 if profit_yoy and profit_yoy > 20
            else 2 if profit_yoy and profit_yoy > 0 else -8 if profit_yoy and profit_yoy > -20
            else -15) if profit_yoy else 0
+    # CAGR加分
+    if rev_cagr is not None:
+        gs += (8 if rev_cagr > 20 else 4 if rev_cagr > 10 else 0 if rev_cagr > 0 else -5)
     gs = max(0, min(100, gs))
     sub_scores.append(gs)
+    cagr_comment = ""
+    if rev_cagr is not None:
+        cagr_comment = f"，3年营收CAGR={rev_cagr:+.1f}%"
     result["growth"] = {
         "score": gs,
         "data": {
             "营收同比(%)":      f"{rev_yoy:+.2f}" if rev_yoy else "N/A",
             "净利润同比(%)":    f"{profit_yoy:+.2f}" if profit_yoy else "N/A",
+            "3年营收CAGR(%)":   f"{rev_cagr:+.2f}" if rev_cagr is not None else "N/A",
+            "3年净利CAGR(%)":   f"{profit_cagr:+.2f}" if profit_cagr is not None else "N/A",
             "历年营收增速趋势": [f"{g:+.1f}%" for g in rev_trend] if rev_trend else "N/A",
         },
-        "comment": (f"营收{'+' if rev_yoy and rev_yoy > 0 else ''}{rev_yoy:.1f}%，"
-                    f"净利{'+' if profit_yoy and profit_yoy > 0 else ''}{profit_yoy:.1f}%") if rev_yoy and profit_yoy else "增速数据缺失"
+        "comment": ((f"营收{'+' if rev_yoy and rev_yoy > 0 else ''}{rev_yoy:.1f}%，"
+                    f"净利{'+' if profit_yoy and profit_yoy > 0 else ''}{profit_yoy:.1f}%") if rev_yoy and profit_yoy else "增速数据缺失") + cagr_comment
     }
 
-    # ── 3. 估值水平 ──
+    # ── 3. 估值水平（含5年历史分位数） ──
     vs = 50
     val_data = {}
     if daily_basic:
@@ -1073,20 +1094,37 @@ def analyze_fundamental(stock_basic, fina_data, daily_basic, income_data,
         if pe and pe > 0 and profit_yoy and profit_yoy > 0:
             peg = pe / profit_yoy
 
+        # 5年历史分位数
+        pe_pct, pb_pct = None, None
+        if hist_daily_basic:
+            pe_hist = [sf(r.get("pe_ttm")) for r in hist_daily_basic if sf(r.get("pe_ttm")) and sf(r.get("pe_ttm")) > 0]
+            pb_hist = [sf(r.get("pb")) for r in hist_daily_basic if sf(r.get("pb")) and sf(r.get("pb")) > 0]
+            if pe and pe > 0 and len(pe_hist) >= 50:
+                pe_pct = round(sum(1 for v in pe_hist if v <= pe) / len(pe_hist) * 100, 1)
+            if pb and pb > 0 and len(pb_hist) >= 50:
+                pb_pct = round(sum(1 for v in pb_hist if v <= pb) / len(pb_hist) * 100, 1)
+
         val_data = {
             "PE_TTM":      f"{pe:.2f}" if pe else "N/A",
             "PB":          f"{pb:.2f}" if pb else "N/A",
             "PS_TTM":      f"{ps_:.2f}" if ps_ else "N/A",
             "股息率_TTM(%)": f"{dv:.2f}" if dv else "N/A",
             "PEG":         f"{peg:.2f}" if peg else "N/A",
+            "PE_5年分位(%)": f"{pe_pct:.1f}" if pe_pct is not None else "N/A",
+            "PB_5年分位(%)": f"{pb_pct:.1f}" if pb_pct is not None else "N/A",
         }
-        if peg is not None and peg > 0:
+        # 优先用分位数评分，其次用绝对值
+        if pe_pct is not None:
+            vs += (20 if pe_pct < 20 else 10 if pe_pct < 30 else 0 if pe_pct < 70 else -10 if pe_pct < 85 else -20)
+        elif peg is not None and peg > 0:
             vs += (25 if peg < 0.5 else 15 if peg < 1.0 else 5 if peg < 1.5 else 0 if peg < 2.0 else -10)
         elif pe and pe > 0:
             vs += (20 if pe < 15 else 10 if pe < 25 else 0 if pe < 40 else -10 if pe < 60 else -20)
         elif pe and pe < 0:
             vs -= 20
-        if pb and pb > 0:
+        if pb_pct is not None:
+            vs += (10 if pb_pct < 20 else 5 if pb_pct < 30 else 0 if pb_pct < 70 else -5 if pb_pct < 85 else -10)
+        elif pb and pb > 0:
             vs += (10 if pb < 1 else 5 if pb < 2 else 0 if pb < 4 else -5)
         if dv and dv > 3:
             vs += 10
@@ -1097,11 +1135,25 @@ def analyze_fundamental(stock_basic, fina_data, daily_basic, income_data,
     if val_data.get("PEG") and val_data["PEG"] != "N/A":
         peg_val = float(val_data["PEG"])
         peg_comment = f"，PEG={peg_val:.2f}" + ("(严重低估)" if peg_val < 0.5 else "(合理偏低)" if peg_val < 1.0 else "(合理)" if peg_val < 1.5 else "(偏高)")
+    pct_comment = ""
+    if val_data.get("PE_5年分位(%)") and val_data["PE_5年分位(%)"] != "N/A":
+        pv = float(val_data["PE_5年分位(%)"])
+        pct_comment = f"，PE处于5年{pv:.0f}%分位" + ("(极度低估)" if pv < 10 else "(低估)" if pv < 30 else "(合理)" if pv < 70 else "(偏高)" if pv < 90 else "(极高)")
+    # 保存历史PE/PB序列供图表使用
+    pe_pb_history = []
+    if hist_daily_basic:
+        for r in hist_daily_basic:
+            pe_pb_history.append({
+                "date": r.get("trade_date", ""),
+                "pe": sf(r.get("pe_ttm")),
+                "pb": sf(r.get("pb")),
+            })
     result["valuation"] = {
         "score": vs,
         "data": val_data,
+        "pe_pb_history": pe_pb_history,
         "comment": ("低估值，安全边际高" if vs >= 70 else
-                    "估值合理" if vs >= 50 else "估值偏高，需关注") + peg_comment
+                    "估值合理" if vs >= 50 else "估值偏高，需关注") + peg_comment + pct_comment
     }
 
     # ── 4. 偿债能力 ──
@@ -1149,7 +1201,7 @@ def analyze_fundamental(stock_basic, fina_data, daily_basic, income_data,
         "comment": cf_comment
     }
 
-    # ── 6. 运营效率 ──
+    # ── 6. 运营效率（三项周转率综合评分） ──
     at  = sf(latest.get("assets_turn"))
     inv = sf(latest.get("inv_turn"))
     ar  = sf(latest.get("ar_turn"))
@@ -1157,8 +1209,16 @@ def analyze_fundamental(stock_basic, fina_data, daily_basic, income_data,
     es = 50
     if at:
         es += (15 if at > 1 else 5 if at > 0.5 else 0)
+    if inv:
+        es += (8 if inv > 8 else 4 if inv > 4 else 0 if inv > 2 else -3)
+    if ar:
+        es += (7 if ar > 8 else 3 if ar > 4 else 0 if ar > 2 else -3)
     es = max(0, min(100, es))
     sub_scores.append(es)
+    eff_parts = []
+    if at: eff_parts.append(f"总资产周转{at:.2f}")
+    if inv: eff_parts.append(f"存货周转{inv:.1f}")
+    if ar: eff_parts.append(f"应收周转{ar:.1f}")
     result["efficiency"] = {
         "score": es,
         "data": {
@@ -1166,7 +1226,7 @@ def analyze_fundamental(stock_basic, fina_data, daily_basic, income_data,
             "存货周转率":      f"{inv:.2f}" if inv else "N/A",
             "应收账款周转率":  f"{ar:.2f}"  if ar  else "N/A",
         },
-        "comment": "运营效率较高" if es >= 65 else "运营效率一般"
+        "comment": ("运营效率较高" if es >= 65 else "运营效率一般" if es >= 45 else "运营效率偏低") + "（需结合行业特性判断）"
     }
 
     # ── 7. 业绩预告（事件驱动） ──
@@ -1456,20 +1516,21 @@ def analyze_capital(moneyflow_data, margin_data, top10_holders, holder_number, b
         recent5 = moneyflow_data[-5:]  if len(moneyflow_data) >= 5  else moneyflow_data
         prev5   = moneyflow_data[-10:-5] if len(moneyflow_data) >= 10 else []
 
-        sn5  = smart_net(recent5)
-        net5 = sum(sf(d.get("net_mf_amount"), 0) for d in recent5)
+        sn5  = smart_net(recent5) / 10000  # 元→万元
+        net5 = sum(sf(d.get("net_mf_amount"), 0) for d in recent5) / 10000
         mfd["近5日主力净流入(万元)"]  = round(sn5, 2)
         mfd["近5日全市净流入(万元)"]  = round(net5, 2)
         if prev5:
-            mfd["主力净流入趋势"] = "增强" if sn5 > smart_net(prev5) else "减弱"
+            mfd["主力净流入趋势"] = "增强" if sn5 > smart_net(prev5) / 10000 else "减弱"
 
         # 最新日明细
         lm = moneyflow_data[-1]
         mfd["昨日特大单净额(万元)"] = round(
-            sf(lm.get("buy_elg_amount"), 0) - sf(lm.get("sell_elg_amount"), 0), 2)
+            (sf(lm.get("buy_elg_amount"), 0) - sf(lm.get("sell_elg_amount"), 0)) / 10000, 2)
         mfd["昨日大单净额(万元)"]   = round(
-            sf(lm.get("buy_lg_amount"), 0) - sf(lm.get("sell_lg_amount"), 0), 2)
+            (sf(lm.get("buy_lg_amount"), 0) - sf(lm.get("sell_lg_amount"), 0)) / 10000, 2)
 
+        # sn5 现在单位为万元
         mfs += (25 if sn5 > 5000 else 15 if sn5 > 1000 else 5 if sn5 > 0
                 else -5 if sn5 > -1000 else -15 if sn5 > -5000 else -25)
     mfs = max(0, min(100, mfs))
@@ -3517,11 +3578,21 @@ def predict_next_week(daily_data, technical, fundamental, capital, weekly_data=N
 
 # ─── 综合评分 ──────────────────────────────────────────────────────────────────
 def compute_composite(fundamental, technical, capital):
+    # 数据缺失（comment 含"失败"/"跳过"）时排除该维度，重新分配权重
+    dims = [
+        ("fundamental", fundamental, 0.40),
+        ("technical",   technical,   0.35),
+        ("capital",     capital,     0.25),
+    ]
+    valid = [(n, d, w) for n, d, w in dims
+             if not any(k in d.get("comment", "") for k in ("失败", "跳过"))]
+    if not valid:
+        valid = dims  # 全部缺失则回退到默认 50
+    total_w = sum(w for _, _, w in valid)
     fa = fundamental.get("score", 50)
     ta = technical.get("score",   50)
     ca = capital.get("score",     50)
-    # 权重：基本面 40 | 技术面 35 | 资金面 25
-    score = round(fa * 0.40 + ta * 0.35 + ca * 0.25, 1)
+    score = round(sum(d.get("score", 50) * w / total_w for _, d, w in valid), 1)
 
     if score >= 80:   rating = "★★★★★  强烈看多"
     elif score >= 70: rating = "★★★★   偏多"
@@ -3629,12 +3700,14 @@ def main():
     hk_hold_data   = fetch_hk_hold(ts_code, 30)
     surv_data      = fetch_stk_surv(ts_code, 180)
     nineturn_data  = fetch_nineturn(ts_code, 30)
+    hist_daily_basic = fetch_daily_basic(ts_code, 365 * 5)  # 5年PE/PB历史分位
 
     # ── 多维分析
     print("\n[3/4] 多维分析引擎运行中...")
     fundamental = analyze_fundamental(stock_basic, fina_data, daily_basic, income_data,
                                        balancesheet=balancesheet, forecast_data=forecast_data,
-                                       mainbz_data=mainbz_data, report_rc=report_rc)
+                                       mainbz_data=mainbz_data, report_rc=report_rc,
+                                       hist_daily_basic=hist_daily_basic)
     technical   = analyze_technical(daily_data, factor_data,
                                      cyq_perf_data=cyq_perf_data, nineturn_data=nineturn_data)
     capital     = analyze_capital(moneyflow, margin_data, top10_holders,

@@ -306,13 +306,16 @@ def render_prediction_panel(prediction):
 </div>'''
 
 
-def generate_chart_js(chart_data):
-    """生成 K 线 + 指标图表的 JS（Chart.js）"""
+def generate_chart_js(chart_data, composite=None, pe_pb_history=None):
+    """生成 K 线 + 指标图表 + 雷达图 + 估值历史的 JS（Chart.js）"""
     if not chart_data:
         return ""
 
     dates      = [d["trade_date"] for d in chart_data]
     closes     = [d.get("close")    for d in chart_data]
+    opens      = [d.get("open")     for d in chart_data]
+    highs      = [d.get("high")     for d in chart_data]
+    lows       = [d.get("low")      for d in chart_data]
     ma5        = [d.get("MA5")      for d in chart_data]
     ma20       = [d.get("MA20")     for d in chart_data]
     ma60       = [d.get("MA60")     for d in chart_data]
@@ -327,6 +330,105 @@ def generate_chart_js(chart_data):
     kdj_k      = [d.get("KDJ_K")    for d in chart_data]
     kdj_d      = [d.get("KDJ_D")    for d in chart_data]
     kdj_j      = [d.get("KDJ_J")    for d in chart_data]
+
+    # 雷达图数据
+    radar_js = ""
+    if composite:
+        fa = composite.get("fundamental_score", 50)
+        ta = composite.get("technical_score", 50)
+        ca = composite.get("capital_score", 50)
+        radar_js = f'''
+  // 三维雷达图
+  mkChart('radarChart', {{
+    type: 'radar',
+    data: {{
+      labels: ['基本面', '技术面', '资金面'],
+      datasets: [{{
+        label: '得分',
+        data: [{fa}, {ta}, {ca}],
+        backgroundColor: 'rgba(59,130,246,0.2)',
+        borderColor: '#3b82f6',
+        borderWidth: 2,
+        pointBackgroundColor: '#3b82f6',
+        pointRadius: 4,
+      }}]
+    }},
+    options: {{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{{ title:{{ display:true, text:'三维评分雷达图', font:{{size:13}} }}, legend:{{display:false}} }},
+      scales:{{ r:{{ min:0, max:100, ticks:{{ stepSize:20 }} }} }}
+    }}
+  }});'''
+
+    # PE/PB历史图
+    pepb_js = ""
+    if pe_pb_history and len(pe_pb_history) > 50:
+        # 降采样到约250个点（周频）
+        step = max(1, len(pe_pb_history) // 250)
+        sampled = pe_pb_history[::step]
+        pe_dates = json.dumps([r["date"][:4]+"-"+r["date"][4:6]+"-"+r["date"][6:] for r in sampled if r.get("date")])
+        pe_vals = json.dumps([r.get("pe") for r in sampled])
+        pb_vals = json.dumps([r.get("pb") for r in sampled])
+        pepb_js = f'''
+  // PE/PB历史走势
+  const peDates = {pe_dates};
+  const peVals = {pe_vals};
+  const pbVals = {pb_vals};
+  mkChart('peChart', {{
+    type: 'line',
+    data: {{ labels: peDates, datasets: [
+      {{ label:'PE_TTM', data:peVals, borderColor:'#3b82f6', borderWidth:1.5, pointRadius:0, fill:false, yAxisID:'y' }},
+      {{ label:'PB', data:pbVals, borderColor:'#f59e0b', borderWidth:1.5, pointRadius:0, fill:false, yAxisID:'y1' }},
+    ]}},
+    options: {{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{{ title:{{ display:true, text:'PE/PB 5年历史走势', font:{{size:13}} }} }},
+      scales:{{
+        x:{{ ticks:{{ maxTicksLimit:10 }} }},
+        y:{{ position:'left', title:{{ display:true, text:'PE' }} }},
+        y1:{{ position:'right', title:{{ display:true, text:'PB' }}, grid:{{ drawOnChartArea:false }} }}
+      }}
+    }}
+  }});'''
+
+    # K线蜡烛图（用自定义插件绘制）
+    candle_js = ""
+    if opens and highs and lows:
+        candle_js = f'''
+  // K线蜡烛图（自定义绘制）
+  const opens = {json.dumps(opens)};
+  const highs = {json.dumps(highs)};
+  const lows  = {json.dumps(lows)};
+  const candleCtx = document.getElementById('candleChart');
+  if (candleCtx) {{
+    const ctx2d = candleCtx.getContext('2d');
+    const w = candleCtx.width = candleCtx.parentElement.clientWidth;
+    const h = candleCtx.height = 300;
+    const pad = {{t:30, b:30, l:50, r:20}};
+    const pw = w - pad.l - pad.r;
+    const ph = h - pad.t - pad.b;
+    const allP = [...opens,...highs,...lows,...closes].filter(v=>v!=null);
+    const mn = Math.min(...allP), mx = Math.max(...allP);
+    const rng = mx - mn || 1;
+    const n = closes.length;
+    const bw = Math.max(1, pw / n * 0.6);
+    ctx2d.font = '13px sans-serif';
+    ctx2d.fillStyle = '#64748b';
+    ctx2d.fillText('K线蜡烛图', w/2-30, 18);
+    for (let i = 0; i < n; i++) {{
+      if (opens[i]==null||closes[i]==null||highs[i]==null||lows[i]==null) continue;
+      const x = pad.l + (i+0.5)/n*pw;
+      const toY = v => pad.t + (1-(v-mn)/rng)*ph;
+      const oY = toY(opens[i]), cY = toY(closes[i]);
+      const hY = toY(highs[i]), lY = toY(lows[i]);
+      const up = closes[i] >= opens[i];
+      ctx2d.strokeStyle = ctx2d.fillStyle = up ? '#ef4444' : '#22c55e';
+      ctx2d.beginPath(); ctx2d.moveTo(x, hY); ctx2d.lineTo(x, lY); ctx2d.stroke();
+      const top = Math.min(oY,cY), bt = Math.max(oY,cY);
+      if (up) {{ ctx2d.fillRect(x-bw/2, top, bw, Math.max(bt-top,1)); }}
+      else {{ ctx2d.fillRect(x-bw/2, top, bw, Math.max(bt-top,1)); }}
+    }}
+  }}'''
 
     return f'''<script>
 const labels = {json.dumps(dates)}.map(d => d.substring(4));
@@ -436,6 +538,9 @@ window.addEventListener('DOMContentLoaded', () => {{
       scales:{{ y:{{ min:-20, max:120 }}, x:{{ ticks:{{ maxTicksLimit:10 }} }} }}
     }}
   }});
+{radar_js}
+{pepb_js}
+{candle_js}
 }});
 </script>'''
 
@@ -578,12 +683,32 @@ body{{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backg
 {render_prediction_panel(prediction)}
 '''
 
+    # ── 综合评分雷达图 + 估值历史
+    html += '''
+<div class="chart-section">
+  <div class="dim-title">综合评分概览</div>
+  <div class="chart-grid">
+    <div class="chart-wrapper">
+      <div class="chart-box"><canvas id="radarChart"></canvas></div>
+      <div class="chart-caption">基本面/技术面/资金面三维评分雷达图，直观展示各维度强弱分布</div>
+    </div>
+    <div class="chart-wrapper">
+      <div class="chart-box"><canvas id="peChart"></canvas></div>
+      <div class="chart-caption">PE_TTM/PB近5年历史走势，判断当前估值在历史区间中的位置</div>
+    </div>
+  </div>
+</div>'''
+
     # ── 技术图表
     if chart_data:
         html += '''
 <div class="chart-section">
   <div class="dim-title">技术图表</div>
   <div class="chart-grid">
+    <div class="chart-wrapper">
+      <div class="chart-box"><canvas id="candleChart"></canvas></div>
+      <div class="chart-caption">K线蜡烛图：红色阳线（收盘>开盘）、绿色阴线，直观展示每日开高低收</div>
+    </div>
     <div class="chart-wrapper">
       <div class="chart-box"><canvas id="priceChart"></canvas></div>
       <div class="chart-caption">收盘价走势与MA5/MA20/MA60均线、布林带（BOLL）上中下轨叠加，反映趋势方向与价格运行通道</div>
@@ -698,8 +823,8 @@ body{{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backg
 </div>'''
 
     # ── 图表 JS
-    if chart_data:
-        html += generate_chart_js(chart_data)
+    pe_pb_history = fundamental.get("valuation", {}).get("pe_pb_history", [])
+    html += generate_chart_js(chart_data, composite=composite, pe_pb_history=pe_pb_history)
 
     html += "\n</body>\n</html>"
     with open(out_path, "w", encoding="utf-8") as f:
