@@ -1,0 +1,32 @@
+# OS
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# IDE/Agent configs
+.agent/
+.agents/
+.cline/
+.iflow/
+.kiro/
+.qwen/
+.trae/
+.windsurf/
+.claude/
+
+# Generated data (can be regenerated)
+data/*.json
+data/*.html
+data/CLAUDE.md
+
+# Reports (keep example reports)
+reports/*.html
+reports/CLAUDE.md
+!reports/300548.SZ_report.html
+
+# Docs plans (internal working docs)
+docs/plans/
+docs/.DS_Store

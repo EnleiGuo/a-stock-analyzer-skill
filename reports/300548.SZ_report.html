@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>长芯博创(300548.SZ) 深度分析报告</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;background:#f0f4f8;color:#1e293b;line-height:1.6}
+.wrap{max-width:1160px;margin:0 auto;padding:20px}
+
+/* Header */
+.header{background:linear-gradient(135deg,#0f2544,#1d4ed8);color:#fff;padding:36px 32px;border-radius:16px;margin-bottom:20px}
+.header h1{font-size:26px;margin-bottom:6px}
+.header .sub{opacity:.82;font-size:13px}
+.tag{display:inline-block;background:rgba(255,255,255,.18);border-radius:99px;padding:2px 10px;font-size:12px;margin:3px 2px}
+
+/* Score overview */
+.score-box{display:grid;grid-template-columns:180px 1fr;gap:20px;background:#fff;border-radius:16px;padding:24px;margin-bottom:20px;box-shadow:0 1px 4px rgba(0,0,0,.07)}
+.big-score{display:flex;flex-direction:column;align-items:center;justify-content:center}
+.bsn{font-size:64px;font-weight:700;color:#f59e0b;line-height:1}
+.bsl{font-size:13px;color:#64748b;margin-top:6px}
+.bsr{font-size:16px;font-weight:600;color:#f59e0b;margin-top:6px}
+.score-bars{display:flex;flex-direction:column;justify-content:center;gap:14px}
+.score-bar{display:flex;align-items:center;gap:10px}
+.score-label{width:64px;font-size:13px;color:#475569;text-align:right}
+.score-track{flex:1;height:22px;background:#e2e8f0;border-radius:11px;overflow:hidden}
+.score-fill{height:100%;border-radius:11px}
+.score-value{width:32px;font-size:15px;font-weight:600}
+
+/* Prediction panel */
+.pred-panel{background:#fff;border-radius:16px;padding:28px;margin-bottom:20px;box-shadow:0 1px 4px rgba(0,0,0,.07);border-top:4px solid #6366f1}
+.pred-title{font-size:18px;font-weight:700;margin-bottom:18px;color:#1e293b}
+.pred-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+.pred-metric{text-align:center;background:#f8fafc;border-radius:12px;padding:14px 8px}
+.pred-metric-val{font-size:22px;font-weight:700;margin-bottom:4px}
+.pred-metric-lbl{font-size:12px;color:#64748b}
+.pred-stats{text-align:center;font-size:13px;color:#64748b;margin-bottom:14px}
+.pred-range{display:flex;justify-content:space-around;background:#f8fafc;border-radius:12px;padding:16px;margin-bottom:12px}
+.pred-range-item,.pred-range-mid{text-align:center}
+.pred-range-val{font-size:20px;font-weight:700}
+.pred-range-lbl{font-size:12px;color:#64748b;margin-top:4px}
+.pred-reasons{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:14px}
+.pred-reasons-col{background:#f8fafc;border-radius:10px;padding:12px}
+.pred-reasons-title{font-size:13px;font-weight:600;margin-bottom:8px}
+.pred-summary{margin-top:14px;background:#eff6ff;border-left:4px solid #3b82f6;padding:12px 14px;border-radius:0 8px 8px 0;font-size:13px;color:#1e3a5f;line-height:1.7}
+
+/* Section grid */
+.dim-title{font-size:18px;font-weight:700;margin:24px 0 12px;padding-left:12px;border-left:4px solid #3b82f6;color:#1e293b}
+.card-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px}
+@media(max-width:768px){.card-grid,.pred-grid,.pred-reasons{grid-template-columns:1fr}.score-box{grid-template-columns:1fr}}
+
+/* Card */
+.card{background:#fff;border-radius:12px;padding:18px;box-shadow:0 1px 3px rgba(0,0,0,.07)}
+.card-header{display:flex;justify-content:space-between;align-items:center;font-size:15px;font-weight:600;margin-bottom:8px}
+.card-score{font-size:18px;font-weight:700}
+.card-comment{font-size:12px;color:#64748b;background:#f8fafc;border-left:3px solid #3b82f6;padding:6px 10px;border-radius:0 6px 6px 0;margin-bottom:10px}
+
+/* KV Table */
+.kv-table{width:100%;border-collapse:collapse;font-size:13px}
+.kv-table tr{border-bottom:1px solid #f1f5f9}
+.kv-table tr:last-child{border-bottom:none}
+.td-k{padding:5px 0;color:#64748b;width:48%}
+.td-v{padding:5px 0;font-weight:500;text-align:right}
+.muted{color:#94a3b8;font-style:italic}
+
+/* Charts */
+.chart-section{background:#fff;border-radius:12px;padding:20px;margin-bottom:20px;box-shadow:0 1px 3px rgba(0,0,0,.07)}
+.chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:768px){.chart-grid{grid-template-columns:1fr}.chart-box{height:220px}}
+@media(max-width:480px){.chart-box{height:180px}.chart-caption{font-size:11px}}
+.chart-wrapper{display:flex;flex-direction:column}
+.chart-box{position:relative;height:240px;width:100%}
+.chart-caption{font-size:12px;color:#64748b;text-align:center;margin-top:8px;line-height:1.5;padding:0 8px}
+
+/* Signals */
+.signal-card{background:#fff;border-radius:12px;padding:18px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.07)}
+
+/* News Section */
+.news-section{margin:20px 0}
+.news-layer{margin:8px 0;padding:8px;background:#f9f9f9;border-radius:4px}
+.news-overall{margin-top:12px;padding:10px;background:#fff8e1;border-radius:4px}
+
+/* Disclaimer */
+.disc{background:#fefce8;border:1px solid #fbbf24;border-radius:12px;padding:14px 18px;margin-top:20px;font-size:12px;color:#92400e}
+.footer{text-align:center;color:#94a3b8;font-size:11px;margin-top:12px;padding-bottom:20px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- Header -->
+<div class="header">
+  <h1>长芯博创 (300548.SZ)</h1>
+  <div class="sub">通信设备 &nbsp;|&nbsp; 报告生成时间: 2026-02-23 08:03:35</div>
+  <div style="margin-top:10px"><span class="tag">长三角一体化</span> <span class="tag">深股通</span> <span class="tag">年报预增</span> <span class="tag">华为概念</span></div>
+</div>
+
+<!-- Score Overview -->
+<div class="score-box">
+  <div class="big-score">
+    <div class="bsn">64.6</div>
+    <div class="bsl">综合评分</div>
+    <div class="bsr">★★★    中性偏多</div>
+  </div>
+  <div class="score-bars">
+    
+    <div class="score-bar">
+      <div class="score-label">基本面</div>
+      <div class="score-track"><div class="score-fill" style="width:73.0%;background:#ef4444"></div></div>
+      <div class="score-value" style="color:#ef4444">73.0</div>
+    </div>
+    
+    <div class="score-bar">
+      <div class="score-label">技术面</div>
+      <div class="score-track"><div class="score-fill" style="width:70.2%;background:#ef4444"></div></div>
+      <div class="score-value" style="color:#ef4444">70.2</div>
+    </div>
+    
+    <div class="score-bar">
+      <div class="score-label">资金面</div>
+      <div class="score-track"><div class="score-fill" style="width:43.2%;background:#f59e0b"></div></div>
+      <div class="score-value" style="color:#f59e0b">43.2</div>
+    </div>
+  </div>
+</div>
+
+<!-- Prediction -->
+
+<div class="pred-panel">
+  <div class="pred-title">🔮 未来一周走势预测</div>
+
+  <div class="pred-grid">
+    <!-- 方向 + 概率 -->
+    <div class="pred-metric">
+      <div class="pred-metric-val" style="color:#ef4444">偏多震荡</div>
+      <div class="pred-metric-lbl">预判方向</div>
+    </div>
+    <div class="pred-metric">
+      <div class="pred-metric-val" style="color:#f59e0b">60%</div>
+      <div class="pred-metric-lbl">上涨概率</div>
+    </div>
+    <div class="pred-metric">
+      <div class="pred-metric-val" style="color:#dc2626">高风险</div>
+      <div class="pred-metric-lbl">波动风险等级</div>
+    </div>
+    <div class="pred-metric">
+      <div class="pred-metric-val" style="color:#6366f1">1:1.67</div>
+      <div class="pred-metric-lbl">风险收益比</div>
+    </div>
+  </div>
+
+  <!-- 信号统计 -->
+  <div class="pred-stats">
+    <span style="color:#ef4444">看多强度：6.3</span>
+    &nbsp;&nbsp;|&nbsp;&nbsp;
+    <span style="color:#22c55e">看空强度：2.8</span>
+  </div>
+
+  <!-- 目标区间 -->
+  
+        <div class="pred-range">
+          <div class="pred-range-item" style="color:#ef4444">
+            <div class="pred-range-val">174.88</div>
+            <div class="pred-range-lbl">目标上沿 (+11.7%)</div>
+          </div>
+          <div class="pred-range-mid">
+            <div class="pred-range-val" style="color:#3b82f6">156.50</div>
+            <div class="pred-range-lbl">当前价格</div>
+          </div>
+          <div class="pred-range-item" style="color:#22c55e">
+            <div class="pred-range-val">145.52</div>
+            <div class="pred-range-lbl">目标下沿 (-7.0%)</div>
+          </div>
+        </div>
+  
+        <div style="display:flex;gap:16px;margin-top:8px;font-size:13px;">
+          <div style="flex:1;text-align:center;background:#dcfce7;border-radius:8px;padding:8px;">
+            <div style="color:#16a34a;font-weight:600">关键支撑</div>
+            <div style="font-size:16px;font-weight:700;color:#16a34a">130.51</div>
+          </div>
+          <div style="flex:1;text-align:center;background:#fee2e2;border-radius:8px;padding:8px;">
+            <div style="color:#dc2626;font-weight:600">关键阻力</div>
+            <div style="font-size:16px;font-weight:700;color:#dc2626">174.88</div>
+          </div>
+        </div>
+
+  <!-- 催化剂 & 风险 -->
+  <div class="pred-reasons">
+    <div class="pred-reasons-col">
+      <div class="pred-reasons-title" style="color:#ef4444">📈 看多催化剂</div>
+      <ul style="margin:0;padding-left:16px;font-size:12px;color:#374151">
+        <li>✅ [技术] 均线完美多头排列，趋势强劲上行</li><li>✅ [技术] OBV能量潮上升，量价共振确认多头</li><li>✅ [基本面] 财务扎实，具备估值支撑</li><li>✅ [估值] 当前低估，安全边际较高</li><li>✅ [业绩] 业绩预告：预增</li><li>✅ [研报] 券商评级以买入为主</li>
+      </ul>
+    </div>
+    <div class="pred-reasons-col">
+      <div class="pred-reasons-title" style="color:#22c55e">📉 主要风险</div>
+      <ul style="margin:0;padding-left:16px;font-size:12px;color:#374151">
+        <li>⚠️ [技术] ATR=9.4%，波动率较高，风险偏大</li><li>⚠️ [资金] 主力大单持续净流出，压制上涨</li><li>⚠️ [增减持] 股东减持频繁，抛压较大</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 预测摘要 -->
+  <div class="pred-summary">综合 5 个技术信号及资金面、基本面分析，未来一周（约5个交易日）预判走势为【偏多震荡】，上涨概率约 60%。价格参考区间 [145.52, 174.88]，风险等级：高风险，风险收益比 1:1.67。关键支撑 130.51，关键阻力 174.88。</div>
+</div>
+
+<div class="chart-section">
+  <div class="dim-title">技术图表</div>
+  <div class="chart-grid">
+    <div class="chart-wrapper">
+      <div class="chart-box"><canvas id="priceChart"></canvas></div>
+      <div class="chart-caption">收盘价走势与MA5/MA20/MA60均线、布林带（BOLL）上中下轨叠加，反映趋势方向与价格运行通道</div>
+    </div>
+    <div class="chart-wrapper">
+      <div class="chart-box"><canvas id="volChart"></canvas></div>
+      <div class="chart-caption">每日成交量柱状图，红色为上涨日、绿色为下跌日，量能变化揭示多空力量对比</div>
+    </div>
+    <div class="chart-wrapper">
+      <div class="chart-box"><canvas id="macdChart"></canvas></div>
+      <div class="chart-caption">MACD指标：DIF线（蓝）与DEA线（橙）的金叉/死叉信号，柱状体红正绿负反映动能强弱</div>
+    </div>
+    <div class="chart-wrapper">
+      <div class="chart-box"><canvas id="rsiChart"></canvas></div>
+      <div class="chart-caption">RSI(6)相对强弱指标，70以上超买区间（红虚线）、30以下超卖区间（绿虚线），判断短期超买超卖</div>
+    </div>
+    <div class="chart-wrapper">
+      <div class="chart-box"><canvas id="kdjChart"></canvas></div>
+      <div class="chart-caption">KDJ随机指标：K线（蓝）、D线（橙）、J线（紫），80以上超买、20以下超卖，J值极端时关注反转</div>
+    </div>
+  </div>
+</div>
+<div class="dim-title">技术信号列表（共 5 个）</div>
+<div class="signal-card">
+  <ul style="list-style:none;padding:0;margin:0"><li style="border-left:3px solid #dc2626;padding:4px 8px;margin:4px 0;font-size:13px;">⬆⬆ 均线完美多头排列，趋势强劲上行</li><li style="border-left:3px solid #ef4444;padding:4px 8px;margin:4px 0;font-size:13px;">⬆ 股价站上MA20 +3.3%，趋势偏多</li><li style="border-left:3px solid #ef4444;padding:4px 8px;margin:4px 0;font-size:13px;">⬆ MACD双线位于零轴上方，多头市场</li><li style="border-left:3px solid #ef4444;padding:4px 8px;margin:4px 0;font-size:13px;">⬆ OBV能量潮上升，量价共振确认多头</li><li style="border-left:3px solid #86efac;padding:4px 8px;margin:4px 0;font-size:13px;">↓ ATR=9.4%，波动率较高，风险偏大</li></ul>
+</div><div class="dim-title">基本面分析</div>
+<div style="background:#fff;border-radius:12px;padding:18px;margin-bottom:14px;box-shadow:0 1px 3px rgba(0,0,0,.07);border-left:4px solid #3b82f6;">
+  <div style="font-size:13px;color:#374151;line-height:1.8"><b style="font-size:14px">基本面综合评分 <span style="color:#dc2626">73.0分</span></b><br><b>盈利能力（65分）：</b>ROE_加权 <span style="color:#d97706"><b>14.35%</b></span>。ROE 14.3% —— 一般<br><b>成长能力（85分）：</b>营收同比 <span style="color:#dc2626"><b>+45.41%</b></span>，净利同比 <span style="color:#dc2626"><b>+566.59%</b></span>。营收+45.4%，净利+566.6%<br><b>估值水平（70分）：</b>PE_TTM=<b>160.50</b>，PEG <span style="color:#dc2626"><b>0.28</b></span>。低估值，安全边际高，PEG=0.28(严重低估)<br><b>偿债安全（70分）：</b>资产负债率 <span style="color:#dc2626"><b>31.28%</b></span>。财务稳健，偿债能力强<br><b>现金流（70分）：</b>每股经营现金流 <span style="color:#dc2626"><b>1.596元</b></span>。经营现金流>净利润，利润质量高<br><b>运营效率（55分）：</b>总资产周转率 <b>0.500</b>。运营效率一般<br><b>业绩预告：</b>类型 <span style="color:#dc2626"><b>预增</b></span>，净利变动幅度 <b>344.0% ~ 413.4%</b><br><b>券商预测（65分）：</b>近期<b>11</b>篇研报，评级 买入/增持11 中性0 减持0，预测EPS均值 <b>3.48</b><br><b>主营业务：</b>共3项，主要包括<b>数据通信、消费及工业互联市场</b>、<b>电信市场</b>、<b>其他业务</b>等<br><b>资产结构：</b>商誉占比 <span style="color:#dc2626"><b>6.28%</b></span>，有息负债 <b>2.69亿</b>。资产结构健康</div>
+</div><div class="card-grid">
+<div class="card">
+  <div class="card-header">
+    <span>💰 盈利能力</span>
+    <span class="card-score" style="color:#ef4444">65 分</span>
+  </div>
+  <div class="card-comment">ROE 14.3% —— 一般</div>
+  <table class="kv-table"><tr><td class="td-k">ROE_加权(%)</td><td class="td-v">14.35</td></tr><tr><td class="td-k">ROA(%)</td><td class="td-v">12.77</td></tr><tr><td class="td-k">净利率(%)</td><td class="td-v">23.31</td></tr><tr><td class="td-k">毛利率(%)</td><td class="td-v">39.90</td></tr><tr><td class="td-k">每股收益(EPS)</td><td class="td-v">0.860</td></tr></table>
+  
+</div>
+<div class="card">
+  <div class="card-header">
+    <span>📈 成长能力</span>
+    <span class="card-score" style="color:#ef4444">85 分</span>
+  </div>
+  <div class="card-comment">营收+45.4%，净利+566.6%</div>
+  <table class="kv-table"><tr><td class="td-k">营收同比(%)</td><td class="td-v">+45.41</td></tr><tr><td class="td-k">净利润同比(%)</td><td class="td-v">+566.59</td></tr><tr><td class="td-k">历年营收增速趋势</td><td class="td-v">+49.5% → +122.8% → +0.0%</td></tr></table>
+  
+</div>
+<div class="card">
+  <div class="card-header">
+    <span>🏷️ 估值水平</span>
+    <span class="card-score" style="color:#ef4444">70 分</span>
+  </div>
+  <div class="card-comment">低估值，安全边际高，PEG=0.28(严重低估)</div>
+  <table class="kv-table"><tr><td class="td-k">PE_TTM</td><td class="td-v">160.50</td></tr><tr><td class="td-k">PB</td><td class="td-v">24.36</td></tr><tr><td class="td-k">PS_TTM</td><td class="td-v">19.79</td></tr><tr><td class="td-k">股息率_TTM(%)</td><td class="td-v">0.05</td></tr><tr><td class="td-k">PEG</td><td class="td-v">0.28</td></tr></table>
+  
+</div>
+<div class="card">
+  <div class="card-header">
+    <span>🛡️ 偿债能力</span>
+    <span class="card-score" style="color:#ef4444">70 分</span>
+  </div>
+  <div class="card-comment">财务稳健，偿债能力强</div>
+  <table class="kv-table"><tr><td class="td-k">流动比率</td><td class="td-v">3.23</td></tr><tr><td class="td-k">速动比率</td><td class="td-v">2.70</td></tr><tr><td class="td-k">资产负债率(%)</td><td class="td-v">31.28</td></tr></table>
+  
+</div>
+<div class="card">
+  <div class="card-header">
+    <span>💵 现金流质量</span>
+    <span class="card-score" style="color:#ef4444">70 分</span>
+  </div>
+  <div class="card-comment">经营现金流>净利润，利润质量高</div>
+  <table class="kv-table"><tr><td class="td-k">每股经营现金流</td><td class="td-v">1.596</td></tr></table>
+  
+</div>
+<div class="card">
+  <div class="card-header">
+    <span>⚙️ 运营效率</span>
+    <span class="card-score" style="color:#f59e0b">55 分</span>
+  </div>
+  <div class="card-comment">运营效率一般</div>
+  <table class="kv-table"><tr><td class="td-k">总资产周转率</td><td class="td-v">0.500</td></tr><tr><td class="td-k">存货周转率</td><td class="td-v">N/A</td></tr><tr><td class="td-k">应收账款周转率</td><td class="td-v">4.16</td></tr></table>
+  
+</div>
+<div class="card">
+  <div class="card-header">
+    <span>📢 业绩预告</span>
+    <span class="card-score" style="color:#ef4444">70 分</span>
+  </div>
+  <div class="card-comment">业绩预告：预增</div>
+  <table class="kv-table"><tr><td class="td-k">预告类型</td><td class="td-v">预增</td></tr><tr><td class="td-k">净利变动幅度</td><td class="td-v">344.0% ~ 413.4%</td></tr><tr><td class="td-k">报告期</td><td class="td-v">20251231</td></tr><tr><td class="td-k">公告日期</td><td class="td-v">20260116</td></tr></table>
+  
+</div>
+<div class="card">
+  <div class="card-header">
+    <span>🏭 主营业务构成</span>
+    <span class="card-score" style="color:#f59e0b">50 分</span>
+  </div>
+  <div class="card-comment">共3项业务</div>
+  <table class="kv-table"><tr><td class="td-k">报告期</td><td class="td-v">20250630</td></tr><tr><td class="td-k">业务数量</td><td class="td-v">3</td></tr><tr><td class="td-k">主要业务</td><td class="td-v">数据通信、消费及工业互联市场，收入占比81.4% → 电信市场，收入占比18.5% → 其他业务，收入占比0.2%</td></tr></table>
+  
+</div>
+<div class="card">
+  <div class="card-header">
+    <span>🔬 券商盈利预测</span>
+    <span class="card-score" style="color:#ef4444">65 分</span>
+  </div>
+  <div class="card-comment">券商覆盖11篇</div>
+  <table class="kv-table"><tr><td class="td-k">近期研报数</td><td class="td-v">11</td></tr><tr><td class="td-k">评级分布</td><td class="td-v">买入/增持11 中性0 减持0</td></tr><tr><td class="td-k">预测EPS均值</td><td class="td-v">3.48</td></tr></table>
+  
+</div>
+<div class="card">
+  <div class="card-header">
+    <span>📑 资产负债增强</span>
+    <span class="card-score" style="color:#f59e0b">50 分</span>
+  </div>
+  <div class="card-comment">资产结构健康</div>
+  <table class="kv-table"><tr><td class="td-k">有息负债(亿)</td><td class="td-v">2.69</td></tr><tr><td class="td-k">商誉(亿)</td><td class="td-v">2.28</td></tr><tr><td class="td-k">应收账款(亿)</td><td class="td-v">4.58</td></tr><tr><td class="td-k">商誉占比(%)</td><td class="td-v">6.28</td></tr><tr><td class="td-k">应收占比(%)</td><td class="td-v">12.61</td></tr><tr><td class="td-k">有息负债/净资产(%)</td><td class="td-v">10.8</td></tr></table>
+  
+</div></div><div class="dim-title">技术面分析</div>
+<div style="background:#fff;border-radius:12px;padding:18px;margin-bottom:14px;box-shadow:0 1px 3px rgba(0,0,0,.07);border-left:4px solid #8b5cf6;">
+  <div style="font-size:13px;color:#374151;line-height:1.8"><b style="font-size:14px">技术面综合评分 <span style="color:#dc2626">70.2分</span></b><br><b>趋势：</b><span style="color:#dc2626"><b>多头排列（强势）</b></span><br><b>动量：</b>MACD <span style="color:#dc2626"><b>零轴上方</b></span>(DIF=7.48)，RSI(6)=<b>47.13</b>，KDJ_K=<b>56.2</b><br><b>量能：</b>量比<b>1.11</b>，OBV上升<br><b>波动：</b>日均波幅<span style="color:#dc2626"><b>9.35%</b></span>，支撑<b style="color:#16a34a">130.51</b>，阻力<b style="color:#dc2626">174.88</b><br><b>筹码：</b>获利比例<span style="color:#16a34a"><b>10.91%</b></span>，加权成本<b>162.59</b>。<br><b>九转：</b>上涨计数<b>0</b>，下跌计数<b>1</b>。<br><b>信号汇总：</b>共<b>5</b>个（<span style="color:#dc2626">多4</span> <span style="color:#16a34a">空1</span>）：<span style="color:#dc2626">均线完美多头排列，趋势强劲上行</span>、<span style="color:#dc2626">股价站上MA20 +3.3%，趋势偏多</span>、<span style="color:#dc2626">MACD双线位于零轴上方，多头市场</span>、<span style="color:#dc2626">OBV能量潮上升，量价共振确认多头</span>、<span style="color:#16a34a">ATR=9.4%，波动率较高，风险偏大</span><br><b>族聚合：</b>保留3个独立信号：<span style="color:#dc2626">TREND(strong_bull)</span>、<span style="color:#dc2626">VOLUME(bull)</span>、<span style="color:#16a34a">VOLATILITY(weak_bear)</span></div>
+</div><div class="card-grid">
+<div class="card">
+  <div class="card-header">
+    <span>📊 趋势分析</span>
+    <span class="card-score" style="color:#ef4444">70.2 分</span>
+  </div>
+  <div class="card-comment">技术面偏多 ▲，看多信号4个 vs 看空1个</div>
+  <table class="kv-table"><tr><td class="td-k">current_price</td><td class="td-v">156.5</td></tr><tr><td class="td-k">MA5</td><td class="td-v">165.25</td></tr><tr><td class="td-k">MA10</td><td class="td-v">161.28</td></tr><tr><td class="td-k">MA20</td><td class="td-v">151.57</td></tr><tr><td class="td-k">MA60</td><td class="td-v">138.92</td></tr><tr><td class="td-k">均线排列</td><td class="td-v">多头排列（强势）</td></tr><tr><td class="td-k">距MA20(%)</td><td class="td-v">3.25</td></tr><tr><td class="td-k">近20日线性趋势</td><td class="td-v">上升</td></tr></table>
+  
+</div>
+<div class="card">
+  <div class="card-header">
+    <span>🚀 动量指标</span>
+    <span class="card-score" style="color:#ef4444">70.2 分</span>
+  </div>
+  <div class="card-comment"></div>
+  <table class="kv-table"><tr><td class="td-k">MACD_DIF</td><td class="td-v">7.479</td></tr><tr><td class="td-k">MACD_DEA</td><td class="td-v">6.687</td></tr><tr><td class="td-k">MACD_柱</td><td class="td-v">1.585</td></tr><tr><td class="td-k">MACD_柱趋势</td><td class="td-v">收敛</td></tr><tr><td class="td-k">RSI_6</td><td class="td-v">47.13</td></tr><tr><td class="td-k">RSI_12</td><td class="td-v">52.09</td></tr><tr><td class="td-k">KDJ_K</td><td class="td-v">56.2</td></tr><tr><td class="td-k">KDJ_D</td><td class="td-v">65.26</td></tr><tr><td class="td-k">KDJ_J</td><td class="td-v">38.09</td></tr><tr><td class="td-k">BOLL_上</td><td class="td-v">176.73</td></tr><tr><td class="td-k">BOLL_中</td><td class="td-v">151.57</td></tr><tr><td class="td-k">BOLL_下</td><td class="td-v">126.41</td></tr><tr><td class="td-k">BOLL_带宽(%)</td><td class="td-v">33.2</td></tr><tr><td class="td-k">BOLL_位置</td><td class="td-v">中上轨（偏强）</td></tr><tr><td class="td-k">CCI</td><td class="td-v">45.65</td></tr></table>
+  
+</div>
+<div class="card">
+  <div class="card-header">
+    <span>📶 量能分析</span>
+    <span class="card-score" style="color:#ef4444">70.2 分</span>
+  </div>
+  <div class="card-comment"></div>
+  <table class="kv-table"><tr><td class="td-k">量比</td><td class="td-v">1.11</td></tr><tr><td class="td-k">近5日量能变化(%)</td><td class="td-v">-1.8</td></tr><tr><td class="td-k">近5日价格变化(%)</td><td class="td-v">1.82</td></tr><tr><td class="td-k">OBV趋势</td><td class="td-v">上升</td></tr></table>
+  
+</div>
+<div class="card">
+  <div class="card-header">
+    <span>🌊 波动与支撑阻力</span>
+    <span class="card-score" style="color:#ef4444">70.2 分</span>
+  </div>
+  <div class="card-comment"></div>
+  <table class="kv-table"><tr><td class="td-k">ATR_14</td><td class="td-v">14.635</td></tr><tr><td class="td-k">ATR_%(日波幅预期)</td><td class="td-v">9.35</td></tr><tr><td class="td-k">支撑位(20日低点)</td><td class="td-v">130.51</td></tr><tr><td class="td-k">阻力位(20日高点)</td><td class="td-v">177.77</td></tr><tr><td class="td-k">近期关键支撑</td><td class="td-v">130.51</td></tr><tr><td class="td-k">近期关键阻力</td><td class="td-v">174.88</td></tr></table>
+  
+</div></div><div class="dim-title">资金与筹码分析</div>
+<div style="background:#fff;border-radius:12px;padding:18px;margin-bottom:14px;box-shadow:0 1px 3px rgba(0,0,0,.07);border-left:4px solid #f59e0b;">
+  <div style="font-size:13px;color:#374151;line-height:1.8"><b style="font-size:14px">资金面综合评分 <span style="color:#d97706">43.2分</span></b><br><b>主力资金（25分）：</b>近5日净流入 <span style="color:#16a34a"><b>-19276.48万元</b></span>，趋势增强。主力资金净流出，谨慎对待<br><b>融资融券（53分）：</b>融资余额 <b>257919.99万元</b>，变化 <span style="color:#dc2626"><b>4.49%</b></span>。融资融券趋势中性<br><b>股东结构（50分）：</b>前十大持仓 <b>31.86%</b>，户数变化 <span style="color:#16a34a"><b>88.29%</b></span>。股东结构正常<br><b>大宗交易（50分）：</b>近期<b>58</b>笔，折溢价 <span style="color:#16a34a"><b>0.0%</b></span>。大宗交易平淡<br><b>股东增减持（32分）：</b>增持 <span style="color:#dc2626"><b>0笔</b></span>、减持 <span style="color:#16a34a"><b>18笔</b></span>。股东减持较多，需关注抛压<br><b>限售解禁（55分）：</b>未来90天无解禁<br><b>股权质押（55分）：</b>质押比例 <span style="color:#dc2626"><b>0.0%</b></span>，低<br><b>北向资金：</b>无持仓或数据停更<br><b>机构调研：</b>无近期调研记录</div>
+</div><div class="card-grid">
+<div class="card">
+  <div class="card-header">
+    <span>💹 主力资金流向</span>
+    <span class="card-score" style="color:#22c55e">25 分</span>
+  </div>
+  <div class="card-comment">主力资金净流出，谨慎对待</div>
+  <table class="kv-table"><tr><td class="td-k">近5日主力净流入(万元)</td><td class="td-v">-19276.48</td></tr><tr><td class="td-k">近5日全市净流入(万元)</td><td class="td-v">62071.27</td></tr><tr><td class="td-k">主力净流入趋势</td><td class="td-v">增强</td></tr><tr><td class="td-k">昨日特大单净额(万元)</td><td class="td-v">-6333.65</td></tr><tr><td class="td-k">昨日大单净额(万元)</td><td class="td-v">-29099.11</td></tr></table>
+  
+</div>
+<div class="card">
+  <div class="card-header">
+    <span>📋 融资融券</span>
+    <span class="card-score" style="color:#f59e0b">53 分</span>
+  </div>
+  <div class="card-comment">融资融券趋势中性</div>
+  <table class="kv-table"><tr><td class="td-k">融资余额(万元)</td><td class="td-v">257919.99</td></tr><tr><td class="td-k">融券余额(万元)</td><td class="td-v">433.72</td></tr><tr><td class="td-k">融资余额变化(%)</td><td class="td-v">4.49</td></tr><tr><td class="td-k">融资融券比</td><td class="td-v">594.67</td></tr><tr><td class="td-k">近5日融资余额(万元)</td><td class="td-v">281268.0 → 273283.0 → 269693.0 → 267332.0 → 257920.0</td></tr></table>
+  
+</div>
+<div class="card">
+  <div class="card-header">
+    <span>👥 股东结构</span>
+    <span class="card-score" style="color:#f59e0b">50 分</span>
+  </div>
+  <div class="card-comment">股东结构正常</div>
+  <table class="kv-table"><tr><td class="td-k">前十大流通股东总持仓(%)</td><td class="td-v">31.86</td></tr><tr><td class="td-k">前十大股东数量</td><td class="td-v">10</td></tr><tr><td class="td-k">外资持股机构数</td><td class="td-v">1</td></tr><tr><td class="td-k">股东户数变化(%)</td><td class="td-v">88.29</td></tr><tr><td class="td-k">最新股东户数</td><td class="td-v">79934</td></tr></table>
+  
+</div>
+<div class="card">
+  <div class="card-header">
+    <span>🏢 大宗交易</span>
+    <span class="card-score" style="color:#f59e0b">50 分</span>
+  </div>
+  <div class="card-comment">大宗交易平淡</div>
+  <table class="kv-table"><tr><td class="td-k">近期大宗交易笔数</td><td class="td-v">58</td></tr><tr><td class="td-k">成交总额(万元)</td><td class="td-v">53057.25</td></tr><tr><td class="td-k">平均折溢价率(%)</td><td class="td-v">0.0</td></tr></table>
+  
+</div>
+<div class="card">
+  <div class="card-header">
+    <span>📊 股东增减持</span>
+    <span class="card-score" style="color:#22c55e">32 分</span>
+  </div>
+  <div class="card-comment">股东减持较多，需关注抛压</div>
+  <table class="kv-table"><tr><td class="td-k">近半年增持笔数</td><td class="td-v">0</td></tr><tr><td class="td-k">近半年减持笔数</td><td class="td-v">18</td></tr><tr><td class="td-k">增持总股数(万股)</td><td class="td-v">0</td></tr><tr><td class="td-k">减持总股数(万股)</td><td class="td-v">2973.47</td></tr><tr><td class="td-k">减持压力</td><td class="td-v">偏大</td></tr></table>
+  
+</div>
+<div class="card">
+  <div class="card-header">
+    <span>🔓 限售解禁</span>
+    <span class="card-score" style="color:#f59e0b">55 分</span>
+  </div>
+  <div class="card-comment">无近期解禁压力</div>
+  <table class="kv-table"><tr><td class="td-k">限售解禁</td><td class="td-v">未来90天无解禁</td></tr></table>
+  
+</div>
+<div class="card">
+  <div class="card-header">
+    <span>⛓️ 股权质押</span>
+    <span class="card-score" style="color:#f59e0b">55 分</span>
+  </div>
+  <div class="card-comment">质押比例健康</div>
+  <table class="kv-table"><tr><td class="td-k">质押比例(%)</td><td class="td-v">0.0</td></tr><tr><td class="td-k">质押笔数</td><td class="td-v">1</td></tr><tr><td class="td-k">无限售质押股数(万股)</td><td class="td-v">0.0</td></tr><tr><td class="td-k">质押风险</td><td class="td-v">低</td></tr></table>
+  
+</div>
+<div class="card">
+  <div class="card-header">
+    <span>🌏 北向资金</span>
+    <span class="card-score" style="color:#f59e0b">50 分</span>
+  </div>
+  <div class="card-comment">北向资金持仓稳定</div>
+  <table class="kv-table"><tr><td class="td-k">北向资金</td><td class="td-v">无持仓或数据停更</td></tr></table>
+  
+</div>
+<div class="card">
+  <div class="card-header">
+    <span>🔍 机构调研</span>
+    <span class="card-score" style="color:#f59e0b">50 分</span>
+  </div>
+  <div class="card-comment">机构调研热度一般</div>
+  <table class="kv-table"><tr><td class="td-k">机构调研</td><td class="td-v">无近期调研记录</td></tr></table>
+  
+</div></div><div class="section news-section">
+<h2>消息面分析</h2>
+
+<div style="background:#fff;border-radius:12px;padding:18px;margin-bottom:14px;box-shadow:0 1px 3px rgba(0,0,0,.07);border-left:4px solid #3b82f6;">
+  <div style="font-size:13px;color:#374151;line-height:1.8"><b>宏观层</b> <span style="color:#d97706">[中性]</span> 评分:52<br>关键事件: 周一（2月23日）重点关注财经事件和经济数据、以总理内塔尼亚胡被曝对美方伊朗政策存疑<br>共10条新闻，情感得分0.10（规则统计，建议启用AI模式）<br><b>行业层</b> <span style="color:#d97706">[中性]</span> 评分:50<br>暂无相关新闻<br><b>公司层</b> <span style="color:#d97706">[中性]</span> 评分:50<br>暂无相关新闻<br><b>散户情绪</b><br>东财股吧: 中性 多空比:16:84<br>综合情绪: 股吧中性（规则统计）<br><b>综合消息面:</b> 消息面综合评分约50分（宏观中性/行业中性/公司中性）</div>
+</div>
+<div class="news-overall"><b>散户情绪:</b> 股吧中性（规则统计）<br><b>综合消息面:</b> 消息面综合评分约50分（宏观中性/行业中性/公司中性）</div>
+</div>
+
+<div class="disc">
+  <strong>⚠️ 免责声明：</strong>
+  本报告由程序自动生成，仅供研究参考，<strong>不构成任何投资建议</strong>。股市有风险，投资需谨慎。
+  所有分析基于历史数据与量化模型，过往表现不代表未来收益。预测区间仅为统计估计，实际走势可能因突发事件、
+  政策变化、市场情绪等多种不可控因素而显著偏离。请投资者独立判断，自行承担投资风险。
+</div>
+<div class="footer">A股专业深度分析系统 v2.0 &nbsp;·&nbsp; 数据来源：Tushare Pro &nbsp;·&nbsp; Generated by Claude</div>
+</div><script>
+const labels = ["20250820", "20250821", "20250822", "20250825", "20250826", "20250827", "20250828", "20250829", "20250901", "20250902", "20250903", "20250904", "20250905", "20250908", "20250909", "20250910", "20250911", "20250912", "20250915", "20250916", "20250917", "20250918", "20250919", "20250922", "20250923", "20250924", "20250925", "20250926", "20250929", "20250930", "20251009", "20251010", "20251013", "20251014", "20251015", "20251016", "20251017", "20251020", "20251021", "20251022", "20251023", "20251024", "20251027", "20251028", "20251029", "20251030", "20251031", "20251103", "20251104", "20251105", "20251106", "20251107", "20251110", "20251111", "20251112", "20251113", "20251114", "20251117", "20251118", "20251119", "20251120", "20251121", "20251124", "20251125", "20251126", "20251127", "20251128", "20251201", "20251202", "20251203", "20251204", "20251205", "20251208", "20251209", "20251210", "20251211", "20251212", "20251215", "20251216", "20251217", "20251218", "20251219", "20251222", "20251223", "20251224", "20251225", "20251226", "20251229", "20251230", "20251231", "20260105", "20260106", "20260107", "20260108", "20260109", "20260112", "20260113", "20260114", "20260115", "20260116", "20260119", "20260120", "20260121", "20260122", "20260123", "20260126", "20260127", "20260128", "20260129", "20260130", "20260202", "20260203", "20260204", "20260205", "20260206", "20260209", "20260210", "20260211", "20260212", "20260213"].map(d => d.substring(4));
+const closes = [106.32, 99.64, 101.77, 116.92, 119.72, 134.67, 160.04, 141.53, 144.25, 130.31, 135.79, 119.0, 124.01, 118.85, 115.41, 117.88, 127.48, 119.29, 117.85, 116.85, 119.94, 127.78, 128.0, 128.16, 123.74, 116.76, 115.71, 109.09, 108.88, 106.27, 105.4, 101.3, 100.29, 95.1, 96.8, 97.98, 95.7, 97.9, 101.86, 102.54, 98.42, 109.6, 116.1, 113.65, 110.19, 106.06, 100.11, 99.72, 97.25, 93.5, 96.95, 97.05, 96.2, 99.71, 96.9, 95.52, 91.5, 97.48, 99.81, 104.77, 107.41, 104.52, 108.02, 123.0, 122.5, 117.8, 126.3, 120.8, 117.52, 118.88, 122.76, 122.62, 133.3, 134.3, 143.82, 132.65, 148.01, 135.41, 125.65, 134.33, 140.84, 139.3, 156.97, 155.55, 154.68, 147.89, 142.47, 142.71, 140.3, 142.0, 139.1, 134.16, 142.98, 136.73, 133.7, 131.88, 122.2, 128.97, 133.16, 138.39, 138.37, 135.06, 139.1, 137.43, 132.71, 136.15, 137.6, 146.06, 154.07, 162.0, 153.5, 161.92, 158.08, 159.36, 153.71, 170.2, 165.08, 158.18, 176.31, 156.5];
+const ma5    = [null, null, null, null, 108.874, 114.544, 126.624, 134.576, 140.042, 142.16, 142.384, 134.176, 130.672, 125.592, 122.612, 119.03, 120.726, 119.782, 119.582, 119.87, 120.282, 120.342, 122.084, 124.146, 125.524, 124.888, 122.474, 118.692, 114.836, 111.342, 109.07, 106.188, 104.428, 101.672, 99.778, 98.294, 97.174, 96.696, 98.048, 99.196, 99.284, 102.064, 105.704, 108.062, 109.592, 111.12, 109.222, 105.946, 102.666, 99.328, 97.506, 96.894, 96.19, 96.682, 97.362, 97.076, 95.966, 96.222, 96.242, 97.816, 100.194, 102.798, 104.906, 109.544, 113.09, 115.168, 119.524, 122.08, 120.984, 120.26, 121.252, 120.516, 123.016, 126.372, 131.36, 133.338, 138.416, 138.838, 137.108, 135.21, 136.848, 135.106, 139.418, 145.398, 149.468, 150.878, 151.512, 148.66, 145.61, 143.074, 141.316, 139.654, 139.708, 138.994, 137.334, 135.89, 133.498, 130.696, 129.982, 130.92, 132.218, 134.79, 136.816, 137.67, 136.534, 136.09, 136.598, 137.99, 141.318, 147.176, 150.646, 155.51, 157.914, 158.972, 157.314, 160.654, 161.286, 161.306, 164.696, 165.254];
+const ma20   = [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 123.379, 124.06, 125.467, 126.778, 127.34, 127.541, 126.646, 124.43, 122.808, 121.039, 119.837, 118.317, 117.433, 116.247, 115.059, 114.129, 113.133, 111.544, 110.475, 109.675, 108.96, 107.884, 106.975, 106.38, 105.654, 104.977, 104.442, 103.662, 103.194, 102.612, 101.973, 101.551, 101.338, 101.134, 101.364, 101.37, 101.246, 101.037, 101.016, 100.913, 101.025, 101.474, 101.22, 100.816, 101.284, 101.899, 102.486, 103.795, 104.849, 105.863, 107.132, 108.423, 109.701, 111.556, 113.285, 115.632, 117.488, 120.314, 122.21, 123.502, 124.98, 126.651, 128.391, 130.838, 132.466, 134.075, 135.579, 136.387, 137.483, 138.622, 139.778, 140.595, 141.172, 141.656, 141.777, 141.272, 141.233, 139.942, 139.62, 139.996, 140.199, 140.075, 139.863, 138.97, 138.064, 136.965, 136.379, 136.135, 136.302, 136.991, 137.991, 138.711, 140.099, 140.854, 141.986, 142.986, 144.902, 147.046, 148.506, 150.664, 151.569];
+const ma60   = [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 111.121, 111.139, 111.221, 111.325, 111.426, 111.473, 111.191, 110.629, 110.284, 109.838, 109.648, 109.43, 109.491, 109.646, 109.903, 110.377, 110.623, 110.965, 111.234, 111.364, 111.655, 112.003, 112.195, 112.678, 113.135, 113.65, 114.169, 114.615, 115.175, 115.699, 116.295, 116.856, 117.404, 118.115, 118.809, 119.424, 119.989, 120.431, 120.949, 121.47, 122.068, 122.734, 123.158, 123.541, 123.938, 124.313, 124.815, 125.439, 126.212, 127.159, 128.3, 129.243, 130.324, 131.355, 132.35, 133.296, 134.541, 135.767, 136.779, 138.054, 138.916];
+const vols   = [306667.26, 253251.21, 186432.57, 340190.33, 295691.82, 356074.37, 324184.66, 481496.25, 392009.83, 338633.67, 265585.06, 345018.05, 285579.75, 226626.93, 167464.53, 242637.01, 335479.25, 287208.54, 177708.8, 202675.27, 255869.96, 364212.57, 307658.2, 244634.78, 209960.48, 230889.54, 172664.09, 186228.86, 166765.1, 188405.42, 154637.24, 155173.81, 131789.55, 144108.92, 121912.69, 176043.56, 129664.04, 177146.24, 216844.98, 189365.08, 138756.69, 317149.9, 356599.43, 250315.51, 254931.06, 246175.18, 219911.94, 165234.38, 109614.89, 211312.87, 173435.51, 159115.05, 121489.02, 321214.16, 210462.36, 154019.21, 128270.37, 285329.54, 250026.39, 397686.11, 329550.1, 312261.17, 382441.25, 524004.16, 554828.74, 476536.85, 498435.39, 442155.74, 282530.28, 288713.56, 325900.09, 347689.8, 472881.32, 365659.57, 402114.6, 362190.4, 510523.43, 335210.89, 303865.92, 298218.0, 433128.48, 323817.56, 392061.53, 286029.59, 282851.08, 287938.38, 218910.28, 226228.27, 265715.48, 235454.74, 272640.45, 273834.65, 341228.88, 245255.82, 247656.45, 255943.73, 309852.23, 311097.97, 266733.05, 296915.67, 269962.6, 194113.25, 224882.36, 209730.04, 218843.58, 231141.07, 224156.58, 482071.79, 420427.23, 411561.25, 277313.86, 324804.24, 266970.68, 273392.2, 261601.02, 364479.61, 210071.46, 177615.87, 310608.36, 315738.56];
+const bollUp = [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 114.914, 114.221, 112.364, 115.353, 118.349, 120.272, 124.332, 126.571, 127.96, 129.158, 130.93, 132.384, 135.549, 138.566, 143.015, 144.192, 147.377, 147.888, 147.054, 147.323, 148.483, 148.354, 152.167, 156.007, 159.028, 160.05, 160.646, 160.787, 160.065, 159.24, 158.435, 157.315, 157.402, 157.331, 157.18, 157.228, 157.619, 157.842, 157.339, 157.366, 157.257, 157.183, 154.408, 151.501, 148.201, 146.435, 145.819, 146.536, 149.749, 154.689, 156.728, 160.605, 162.791, 165.249, 166.458, 170.587, 171.94, 172.394, 176.344, 176.727];
+const bollMid= [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 101.474, 101.22, 100.816, 101.284, 101.899, 102.486, 103.795, 104.849, 105.863, 107.132, 108.422, 109.701, 111.556, 113.286, 115.632, 117.488, 120.313, 122.21, 123.502, 124.98, 126.651, 128.39, 130.838, 132.466, 134.074, 135.579, 136.388, 137.483, 138.622, 139.778, 140.595, 141.172, 141.656, 141.777, 141.272, 141.233, 139.943, 139.62, 139.996, 140.199, 140.076, 139.864, 138.97, 138.064, 136.966, 136.378, 136.135, 136.302, 136.991, 137.991, 138.711, 140.099, 140.854, 141.986, 142.986, 144.902, 147.046, 148.507, 150.664, 151.57];
+const bollLo = [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 88.034, 88.219, 89.268, 87.214, 85.449, 84.7, 83.259, 83.128, 83.766, 85.106, 85.915, 87.018, 87.563, 88.005, 88.248, 90.784, 93.25, 96.532, 99.95, 102.637, 104.82, 108.427, 109.509, 108.924, 109.121, 111.108, 112.129, 114.179, 117.179, 120.316, 122.755, 125.029, 125.91, 126.224, 125.363, 125.238, 122.266, 121.399, 122.653, 123.032, 122.894, 122.544, 123.532, 124.627, 125.73, 126.322, 126.451, 126.069, 124.233, 121.293, 120.694, 119.593, 118.917, 118.722, 119.514, 119.217, 122.152, 124.619, 124.984, 126.412];
+const dif    = [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, -1.376, -0.941, -0.311, 1.382, 2.652, 3.243, 4.346, 4.722, 4.702, 4.741, 5.026, 5.182, 6.097, 6.824, 8.075, 8.072, 9.203, 8.98, 7.923, 7.698, 7.953, 7.939, 9.248, 10.054, 10.502, 10.191, 9.4, 8.691, 7.845, 7.228, 6.431, 5.34, 5.127, 4.403, 3.545, 2.686, 1.211, 0.581, 0.415, 0.698, 0.91, 0.802, 1.03, 1.064, 0.702, 0.684, 0.779, 1.518, 2.72, 4.263, 4.745, 5.74, 6.148, 6.5, 6.251, 7.3, 7.63, 7.251, 8.318, 7.479];
+const dea    = [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, -2.646, -2.305, -1.906, -1.248, -0.468, 0.274, 1.088, 1.815, 2.392, 2.862, 3.295, 3.672, 4.157, 4.691, 5.367, 5.908, 6.567, 7.05, 7.224, 7.319, 7.446, 7.545, 7.885, 8.319, 8.755, 9.043, 9.114, 9.029, 8.793, 8.48, 8.07, 7.524, 7.045, 6.516, 5.922, 5.275, 4.462, 3.686, 3.032, 2.565, 2.234, 1.947, 1.764, 1.624, 1.439, 1.288, 1.186, 1.253, 1.546, 2.089, 2.621, 3.244, 3.825, 4.36, 4.738, 5.251, 5.726, 6.031, 6.489, 6.687];
+const macdH  = [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 2.538, 2.727, 3.19, 5.26, 6.241, 5.937, 6.516, 5.815, 4.619, 3.757, 3.463, 3.019, 3.879, 4.266, 5.415, 4.328, 5.272, 3.859, 1.398, 0.757, 1.014, 0.789, 2.725, 3.47, 3.493, 2.297, 0.571, -0.676, -1.895, -2.503, -3.277, -4.369, -3.835, -4.226, -4.755, -5.177, -6.502, -6.209, -5.233, -3.734, -2.648, -2.292, -1.468, -1.121, -1.476, -1.208, -0.816, 0.531, 2.347, 4.346, 4.248, 4.991, 4.646, 4.28, 3.025, 4.098, 3.807, 2.44, 3.659, 1.585];
+const rsi6   = [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 71.162, 60.604, 67.592, 83.041, 81.485, 67.269, 76.258, 62.854, 55.831, 58.157, 64.549, 64.125, 77.6, 78.507, 85.305, 59.021, 72.833, 54.688, 44.405, 53.697, 59.751, 57.613, 71.605, 69.396, 67.856, 56.186, 48.239, 48.625, 44.614, 48.229, 42.545, 34.286, 53.589, 42.879, 38.413, 35.73, 24.714, 40.19, 48.111, 56.701, 56.658, 49.236, 57.408, 53.163, 42.503, 51.081, 54.514, 69.499, 77.807, 83.232, 63.321, 71.442, 63.721, 65.224, 53.485, 71.47, 62.47, 51.901, 68.633, 47.134];
+const kdjK   = [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 60.502, 60.368, 65.526, 71.821, 73.46, 69.913, 74.803, 72.638, 68.101, 66.359, 66.067, 60.8, 68.993, 74.561, 81.803, 74.919, 79.713, 71.44, 57.175, 55.351, 57.709, 55.864, 67.713, 74.249, 76.487, 71.752, 63.626, 57.361, 47.457, 38.381, 32.419, 22.625, 26.485, 22.35, 23.999, 23.09, 15.766, 20.409, 30.968, 46.086, 55.569, 56.892, 63.876, 66.009, 60.303, 61.231, 62.314, 67.152, 73.336, 78.635, 74.138, 74.968, 72.399, 71.727, 66.684, 73.428, 72.446, 61.578, 72.632, 56.205];
+const kdjD   = [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 46.991, 51.45, 56.142, 61.368, 65.399, 66.904, 69.537, 70.57, 69.747, 68.618, 67.767, 65.445, 66.628, 69.272, 73.449, 73.939, 75.864, 74.389, 68.651, 64.218, 62.048, 59.987, 62.562, 66.458, 69.801, 70.451, 68.176, 64.571, 58.866, 52.038, 45.498, 37.874, 34.078, 30.169, 28.112, 26.438, 22.881, 22.057, 25.027, 32.047, 39.887, 45.556, 51.662, 56.445, 57.731, 58.898, 60.036, 62.408, 66.051, 70.246, 71.543, 72.685, 72.59, 72.302, 70.43, 71.429, 71.768, 68.371, 69.792, 65.263];
+const kdjJ   = [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 87.524, 78.203, 84.295, 92.727, 89.583, 75.931, 85.334, 76.772, 64.808, 61.841, 62.666, 51.51, 73.725, 85.139, 98.512, 76.88, 87.411, 65.542, 34.223, 37.619, 49.032, 47.617, 78.015, 89.831, 89.859, 74.354, 54.525, 42.94, 24.638, 11.066, 6.26, -7.871, 11.3, 6.714, 15.773, 16.394, 1.536, 17.115, 42.85, 74.163, 86.932, 79.564, 88.302, 85.139, 65.447, 65.899, 66.87, 76.64, 87.906, 95.413, 79.329, 79.535, 72.018, 70.577, 59.194, 77.427, 73.802, 47.991, 78.312, 38.089];
+
+const lineOpt = (label, data, color, dash=[]) => ({
+  label, data, borderColor: color, borderWidth: 1.5,
+  pointRadius: 0, fill: false,
+  borderDash: dash,
+});
+
+function mkChart(id, config) {
+  const ctx = document.getElementById(id);
+  if (ctx) new Chart(ctx.getContext('2d'), config);
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  // 1. 价格 + 均线 + 布林带
+  mkChart('priceChart', {
+    type: 'line',
+    data: { labels, datasets: [
+      lineOpt('收盘价', closes, '#3b82f6'),
+      lineOpt('MA5',   ma5,    '#f59e0b', [2,2]),
+      lineOpt('MA20',  ma20,   '#22c55e'),
+      lineOpt('MA60',  ma60,   '#ef4444'),
+      lineOpt('BOLL上', bollUp, '#94a3b880', [3,3]),
+      lineOpt('BOLL中', bollMid,'#64748b80', [3,3]),
+      lineOpt('BOLL下', bollLo, '#94a3b880', [3,3]),
+    ]},
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ title:{ display:true, text:'价格走势与均线/布林带', font:{size:13} } },
+      scales:{ x:{ ticks:{ maxTicksLimit:10 } } }
+    }
+  });
+
+  // 2. 成交量
+  const volColors = closes.map((c,i) => i>0 && c >= closes[i-1] ? '#ef444480' : '#22c55e80');
+  mkChart('volChart', {
+    type: 'bar',
+    data: { labels, datasets: [{ label:'成交量', data:vols, backgroundColor:volColors }] },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ title:{ display:true, text:'成交量', font:{size:13} }, legend:{display:false} },
+      scales:{ x:{ ticks:{ maxTicksLimit:10 } } }
+    }
+  });
+
+  // 3. MACD
+  const mColors = macdH.map(v => v >= 0 ? '#ef4444cc' : '#22c55ecc');
+  mkChart('macdChart', {
+    type: 'bar',
+    data: { labels, datasets: [
+      { type:'line', label:'DIF', data:dif, borderColor:'#3b82f6', borderWidth:1.5, pointRadius:0, fill:false, order:0 },
+      { type:'line', label:'DEA', data:dea, borderColor:'#f59e0b', borderWidth:1.5, pointRadius:0, fill:false, order:0 },
+      { label:'MACD', data:macdH, backgroundColor:mColors, order:1 },
+    ]},
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ title:{ display:true, text:'MACD', font:{size:13} } },
+      scales:{ x:{ ticks:{ maxTicksLimit:10 } } }
+    }
+  });
+
+  // 4. RSI
+  mkChart('rsiChart', {
+    type:'line',
+    data:{ labels, datasets:[
+      lineOpt('RSI(6)', rsi6, '#8b5cf6'),
+      { label:'超买70', data:labels.map(()=>70), borderColor:'#ef444480', borderWidth:1, pointRadius:0, fill:false, borderDash:[4,4] },
+      { label:'超卖30', data:labels.map(()=>30), borderColor:'#22c55e80', borderWidth:1, pointRadius:0, fill:false, borderDash:[4,4] },
+    ]},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ title:{ display:true, text:'RSI(6)', font:{size:13} } },
+      scales:{ y:{ min:0, max:100 }, x:{ ticks:{ maxTicksLimit:10 } } }
+    }
+  });
+
+  // 5. KDJ
+  mkChart('kdjChart', {
+    type:'line',
+    data:{ labels, datasets:[
+      lineOpt('K', kdjK, '#3b82f6'),
+      lineOpt('D', kdjD, '#f59e0b'),
+      lineOpt('J', kdjJ, '#8b5cf6', [2,2]),
+      { label:'超买80', data:labels.map(()=>80), borderColor:'#ef444860', borderWidth:1, pointRadius:0, fill:false, borderDash:[4,4] },
+      { label:'超卖20', data:labels.map(()=>20), borderColor:'#22c55e60', borderWidth:1, pointRadius:0, fill:false, borderDash:[4,4] },
+    ]},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ title:{ display:true, text:'KDJ', font:{size:13} } },
+      scales:{ y:{ min:-20, max:120 }, x:{ ticks:{ maxTicksLimit:10 } } }
+    }
+  });
+});
+</script>
+</body>
+</html>
