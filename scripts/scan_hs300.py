@@ -320,17 +320,30 @@ def main():
         for i, item in enumerate(constituents):
             ts_code = item["ts_code"]
             pbar.set_postfix_str(f"当前: {ts_code}")
-            
             result = analyze_single_stock(ts_code)
-            
             if result:
                 all_results.append(result)
             else:
+                # 分析失败的股票也记录，评分设为 -1 表示无数据
+                all_results.append({
+                    "ts_code": ts_code,
+                    "name": "",
+                    "composite_score": -1,
+                    "fundamental_score": -1,
+                    "technical_score": -1,
+                    "capital_score": -1,
+                    "prediction": {
+                        "direction": "数据异常",
+                        "target_low": None,
+                        "target_high": None,
+                        "risk_level": "",
+                    },
+                    "error": True,
+                })
                 skipped.append({"ts_code": ts_code, "reason": "数据异常"})
-            
+            # 每10只保存中间结果
             if (i + 1) % 10 == 0 and not args.no_save:
                 save_partial_results(all_results, args.output)
-            
             pbar.update(1)
     
     end_time = time.time()
