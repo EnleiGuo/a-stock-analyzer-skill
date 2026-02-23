@@ -273,6 +273,7 @@ def format_json_output(results: list[dict], scan_info: dict) -> str:
         "scan_time": scan_info["scan_time"],
         "threshold": scan_info["threshold"],
         "total_scanned": scan_info["total_scanned"],
+        "total_analyzed": scan_info["total_analyzed"],
         "total_matched": scan_info["total_matched"],
         "duration_seconds": scan_info["duration_seconds"],
         "results": results,
@@ -336,14 +337,16 @@ def main():
     duration_seconds = int(end_time - start_time)
     duration_str = f"{duration_seconds // 60}分{duration_seconds % 60}秒"
     
-    print(f"\n[3/4] 筛选评分 ≥ {args.threshold} 的股票...")
+    print(f"\n[3/4] 整理扫描结果...")
+    # 按评分排序所有结果
+    all_results.sort(key=lambda x: x["composite_score"], reverse=True)
+    # 筛选高分股用于终端显示
     qualified = [r for r in all_results if r["composite_score"] >= args.threshold]
-    qualified.sort(key=lambda x: x["composite_score"], reverse=True)
-    
     scan_info = {
         "scan_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "threshold": args.threshold,
         "total_scanned": len(constituents),
+        "total_analyzed": len(all_results),
         "total_matched": len(qualified),
         "duration": duration_str,
         "duration_seconds": duration_seconds,
@@ -363,18 +366,17 @@ def main():
     
     if not args.no_save:
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        
+        # 保存所有结果（不只是高分股）
         csv_path = os.path.join(args.output, f"hs300_scan_{timestamp}.csv")
         with open(csv_path, "w", encoding="utf-8-sig") as f:
-            f.write(format_csv_output(qualified))
-        
+            f.write(format_csv_output(all_results))
         json_path = os.path.join(args.output, f"hs300_scan_{timestamp}.json")
         with open(json_path, "w", encoding="utf-8") as f:
-            f.write(format_json_output(qualified, scan_info))
+            f.write(format_json_output(all_results, scan_info))
         
         delete_partial_file(args.output)
         
-        print(f"\n结果已保存:")
+        print(f"\n结果已保存（含全部 {len(all_results)} 只股票）:")
         print(f"  CSV:  {csv_path}")
         print(f"  JSON: {json_path}")
     
