@@ -12,10 +12,11 @@ export default defineConfig({
     },
   },
   server: {
-    port: 5173,
+    host: true,  // 允许局域网 IP 访问
+    port: 4661,
     proxy: {
       '/api': {
-        target: 'http://localhost:8000',
+        target: 'http://localhost:4662',
         changeOrigin: true,
       },
     },

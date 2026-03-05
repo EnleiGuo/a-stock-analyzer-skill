@@ -21,14 +21,14 @@ import sys
 from datetime import datetime, timedelta
 
 # ─── 配置 ─────────────────────────────────────────────────────────────────────
-TUSHARE_TOKEN = "TUSHARE_TOKEN_PLACEHOLDER"
+# 从环境变量读取 API Key，请勿硬编码
+TUSHARE_TOKEN = os.environ.get("TUSHARE_TOKEN", "")
 API_URL = "http://api.waditu.com"
 
 # 火山引擎 Doubao LLM API 配置
-DOUBAO_API_KEY  = "DOUBAO_API_KEY_PLACEHOLDER"
+DOUBAO_API_KEY = os.environ.get("DOUBAO_API_KEY", "")
 DOUBAO_ENDPOINT = "https://ark.cn-beijing.volces.com/api/v3/chat/completions"
-DOUBAO_MODEL    = "doubao-seed-2-0-pro-260215"
-
+DOUBAO_MODEL = "doubao-seed-2-0-pro-260215"
 
 # ─── API 调用层 ────────────────────────────────────────────────────────────────
 def curl_api(api_name, params=None, fields=None):
@@ -202,7 +202,7 @@ def fetch_daily(ts_code, n=120):
     print("  [数据] 日线行情")
     s, e = _date_range(n)
     rows = curl_api("daily", {"ts_code": ts_code, "start_date": s, "end_date": e})
-    rows.sort(key=lambda x: x.get("trade_date", ""))
+    rows.sort(key=lambda x: x.get("trade_date") or "")
     return rows[-n:] if len(rows) > n else rows
 
 
@@ -211,7 +211,7 @@ def fetch_daily_basic(ts_code, n=60):
     print("  [数据] 每日指标")
     s, e = _date_range(n)
     rows = curl_api("daily_basic", {"ts_code": ts_code, "start_date": s, "end_date": e})
-    rows.sort(key=lambda x: x.get("trade_date", ""))
+    rows.sort(key=lambda x: x.get("trade_date") or "")
     return rows[-n:] if len(rows) > n else rows
 
 
@@ -227,7 +227,7 @@ def fetch_stk_factor(ts_code, n=60):
     rows = curl_api("stk_factor",
                     {"ts_code": ts_code, "start_date": s, "end_date": e},
                     fields=fields)
-    rows.sort(key=lambda x: x.get("trade_date", ""))
+    rows.sort(key=lambda x: x.get("trade_date") or "")
     return rows[-n:] if len(rows) > n else rows
 
 
@@ -235,7 +235,7 @@ def fetch_fina_indicator(ts_code):
     """财务指标（近2年）"""
     print("  [数据] 财务指标")
     rows = curl_api("fina_indicator", {"ts_code": ts_code, "start_date": "20230101"})
-    rows.sort(key=lambda x: x.get("ann_date", ""), reverse=True)
+    rows.sort(key=lambda x: x.get("ann_date") or "", reverse=True)
     return rows
 
 
@@ -244,7 +244,7 @@ def fetch_income(ts_code):
     print("  [数据] 利润表")
     rows = curl_api("income", {"ts_code": ts_code, "start_date": "20210101",
                                "report_type": "1"})
-    rows.sort(key=lambda x: x.get("end_date", ""), reverse=True)
+    rows.sort(key=lambda x: x.get("end_date") or "", reverse=True)
     return rows
 
 
@@ -253,7 +253,7 @@ def fetch_moneyflow(ts_code, n=30):
     print("  [数据] 资金流向")
     s, e = _date_range(n)
     rows = curl_api("moneyflow", {"ts_code": ts_code, "start_date": s, "end_date": e})
-    rows.sort(key=lambda x: x.get("trade_date", ""))
+    rows.sort(key=lambda x: x.get("trade_date") or "")
     return rows[-n:] if len(rows) > n else rows
 
 
@@ -263,7 +263,7 @@ def fetch_margin(ts_code, n=30):
     s, e = _date_range(n)
     rows = curl_api("margin_detail",
                     {"ts_code": ts_code, "start_date": s, "end_date": e})
-    rows.sort(key=lambda x: x.get("trade_date", ""))
+    rows.sort(key=lambda x: x.get("trade_date") or "")
     return rows[-n:] if len(rows) > n else rows
 
 
@@ -277,7 +277,7 @@ def fetch_holder_number(ts_code):
     """股东户数变动（近6期）"""
     print("  [数据] 股东户数")
     rows = curl_api("stk_holdernumber", {"ts_code": ts_code})
-    rows.sort(key=lambda x: x.get("ann_date", ""), reverse=True)
+    rows.sort(key=lambda x: x.get("ann_date") or "", reverse=True)
     return rows[:6]
 
 
@@ -294,7 +294,7 @@ def fetch_weekly(ts_code, n=30):
     print("  [数据] 周线行情")
     s, e = _date_range(n * 7)
     rows = curl_api("weekly", {"ts_code": ts_code, "start_date": s, "end_date": e})
-    rows.sort(key=lambda x: x.get("trade_date", ""))
+    rows.sort(key=lambda x: x.get("trade_date") or "")
     return rows[-n:] if len(rows) > n else rows
 
 
@@ -311,7 +311,7 @@ def fetch_report_rc(ts_code, n=90):
     s, e = _date_range(n)
     rows = curl_api("report_rc", {"ts_code": ts_code, "start_date": s, "end_date": e},
                      fields="ts_code,report_date,org_name,eps,pe,rating,max_price,min_price,np")
-    rows.sort(key=lambda x: x.get("report_date", ""))
+    rows.sort(key=lambda x: x.get("report_date") or "")
     return rows
 
 
@@ -336,7 +336,7 @@ def fetch_balancesheet(ts_code):
                             "total_assets,total_liab,total_hldr_eqy_inc_min_int,"
                             "goodwill,accounts_receiv,inventories,lt_borr,st_borr,"
                             "notes_receiv,oth_receiv")
-    rows.sort(key=lambda x: x.get("end_date", ""))
+    rows.sort(key=lambda x: x.get("end_date") or "")
     return rows
 
 
@@ -366,7 +366,7 @@ def fetch_pledge_stat(ts_code):
     """股权质押统计"""
     print("  [数据] 股权质押")
     rows = curl_api("pledge_stat", {"ts_code": ts_code})
-    rows.sort(key=lambda x: x.get("end_date", ""))
+    rows.sort(key=lambda x: x.get("end_date") or "")
     return rows
 
 
@@ -2803,7 +2803,7 @@ def _xueqiu_via_playwright(symbol: str, n: int) -> list[dict]:
     try:
         with sync_playwright() as p:
             browser = p.chromium.launch(
-                headless=False,
+                headless=True,  # 后端运行，不显示浏览器窗口
                 args=["--disable-blink-features=AutomationControlled"],
             )
             ctx = browser.new_context(

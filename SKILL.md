@@ -26,7 +26,7 @@ compatibility:
 
 ## 使用前提
 
-- **Tushare Token**: 已配置在代码中 (TUSHARE_TOKEN_PLACEHOLDER)
+- **Tushare Token**: 请通过环境变量 `TUSHARE_TOKEN` 配置
 - **依赖**: curl, python3 (系统自带)
 
 ## 工作流程

@@ -1,6 +1,7 @@
 """
 分析任务服务
 """
+from __future__ import annotations
 
 import asyncio
 from datetime import datetime
@@ -42,6 +43,7 @@ try:
         compute_composite,
         predict_next_week,
         generate_ai_summaries,
+        analyze_news,
     )
     ANALYZER_AVAILABLE = True
 except ImportError as e:
@@ -261,31 +263,56 @@ class AnalyzerService:
             # 16. AI 摘要（可选）
             if not no_ai:
                 task["message"] = "生成 AI 摘要"
-                task["progress"] = 92
+                task["progress"] = 90
                 await loop.run_in_executor(
                     None,
                     lambda: generate_ai_summaries(fundamental, technical, capital, stock_basic)
                 )
             
-            # 17. 组装结果
+            # 17. 消息面分析
+            task["message"] = "消息面分析"
+            task["progress"] = 95
+            stock_name = stock_basic.get("name", ts_code)
+            industry = stock_basic.get("industry", "")
+            try:
+                news = await loop.run_in_executor(
+                    None,
+                    lambda: analyze_news(ts_code, stock_name, industry, no_ai=no_ai)
+                )
+            except Exception as e:
+                print(f"消息面分析失败: {e}")
+                news = {}
+            # 18. 组装结果
             task["message"] = "完成"
             task["progress"] = 100
             task["status"] = "completed"
+            
+            # 适配前端数据结构（使用中文字段名）
             task["result"] = {
+                "ts_code": ts_code,
                 "stock_info": {
-                    "ts_code": stock_basic.get("ts_code"),
-                    "name": stock_basic.get("name"),
-                    "industry": stock_basic.get("industry"),
+                    "名称": stock_basic.get("name", ""),
+                    "代码": stock_basic.get("ts_code", ts_code),
+                    "行业": stock_basic.get("industry", ""),
+                    "市场": "SH" if ts_code.endswith(".SH") else "SZ" if ts_code.endswith(".SZ") else "BJ",
+                    "概念": [],  # 暂无概念数据
+                    "上市日期": stock_basic.get("list_date", ""),
                 },
                 "composite": composite,
                 "fundamental": fundamental,
                 "technical": technical,
                 "capital": capital,
                 "prediction": prediction,
+                "news": news,
                 "chart_data": {
                     "daily": daily_data[-60:] if daily_data else [],
-                    "weekly": weekly_data[-20:] if weekly_data else [],
+                    "factor": factor_data[-60:] if factor_data else [],
+                    "ma5": self._calc_ma(daily_data, 5) if daily_data else [],
+                    "ma10": self._calc_ma(daily_data, 10) if daily_data else [],
+                    "ma20": self._calc_ma(daily_data, 20) if daily_data else [],
+                    "ma60": self._calc_ma(daily_data, 60) if daily_data else [],
                 },
+                "analyze_date": datetime.now().strftime("%Y-%m-%d"),
             }
             
         except Exception as e:
@@ -308,6 +335,25 @@ class AnalyzerService:
             return f"{code}.BJ"
         else:
             return f"{code}.SH"
+
+    def _calc_ma(self, daily_data: list, period: int) -> list:
+        """计算移动平均线"""
+        if not daily_data or len(daily_data) < period:
+            return []
+        
+        closes = [d.get("close", 0) for d in daily_data]
+        ma_values = []
+        
+        # 只计算最后60个数据点的MA（与 chart_data.daily 对应）
+        start_idx = max(0, len(closes) - 60)
+        for i in range(start_idx, len(closes)):
+            if i >= period - 1:
+                ma = sum(closes[i - period + 1:i + 1]) / period
+                ma_values.append(round(ma, 2))
+            else:
+                ma_values.append(None)
+        
+        return ma_values
 
 
 # 单例

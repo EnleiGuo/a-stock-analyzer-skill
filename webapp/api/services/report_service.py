@@ -1,6 +1,7 @@
 """
 报告管理服务
 """
+from __future__ import annotations
 
 import json
 from datetime import datetime
@@ -50,7 +51,57 @@ class ReportService:
         report_path.write_text(json.dumps(report, ensure_ascii=False, indent=2))
         
         return report_id
-    
+
+    async def save_direct(
+        self,
+        ts_code: str,
+        name: str,
+        data: dict,
+        title: Optional[str] = None
+    ) -> Optional[str]:
+        """
+        直接保存分析数据为报告
+        
+        返回报告 ID，失败返回 None
+        """
+        stock_info = data.get("stock_info", {})
+        stock_name = stock_info.get("名称", name) or name
+        stock_code = stock_info.get("代码", ts_code) or ts_code
+        
+        # 去重逻辑：检查同一股票是否在1分钟内已有报告
+        now = datetime.now()
+        for report_path in self.reports_dir.glob("*.json"):
+            try:
+                # 检查文件修改时间
+                mtime = datetime.fromtimestamp(report_path.stat().st_mtime)
+                if (now - mtime).total_seconds() > 60:  # 超过1分钟的跳过
+                    continue
+                
+                # 检查是否同一股票
+                report = json.loads(report_path.read_text())
+                if report.get("ts_code") == stock_code:
+                    # 返回已存在的报告 ID
+                    return report.get("id")
+            except Exception:
+                continue
+        
+        # 创建新报告
+        report_id = nanoid(size=10)
+        
+        report = {
+            "id": report_id,
+            "title": title or f"{stock_name} 分析报告",
+            "ts_code": stock_code,
+            "stock_name": stock_name,
+            "score": data.get("composite", {}).get("score", 0),
+            "created_at": now.isoformat(),
+            "data": data,
+        }
+        
+        report_path = self.reports_dir / f"{report_id}.json"
+        report_path.write_text(json.dumps(report, ensure_ascii=False, indent=2))
+        
+        return report_id
     async def get(self, report_id: str) -> Optional[dict]:
         """获取报告详情"""
         report_path = self.reports_dir / f"{report_id}.json"
@@ -113,6 +164,23 @@ class ReportService:
             return True
         except Exception:
             return False
+
+    async def batch_delete(self, report_ids: list[str]) -> int:
+        """
+        批量删除报告
+        
+        返回实际删除的数量
+        """
+        deleted_count = 0
+        for report_id in report_ids:
+            report_path = self.reports_dir / f"{report_id}.json"
+            if report_path.exists():
+                try:
+                    report_path.unlink()
+                    deleted_count += 1
+                except Exception:
+                    pass
+        return deleted_count
 
 
 # 单例

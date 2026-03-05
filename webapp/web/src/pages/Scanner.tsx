@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { ScanLine, Play, Loader2 } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { ScanLine, Play, Loader2, Download, ArrowUpDown, ChevronUp, ChevronDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
@@ -28,12 +29,18 @@ interface ScanResult {
   risk_level: string
 }
 
+type SortField = 'rank' | 'composite_score' | 'fundamental_score' | 'technical_score' | 'capital_score' | 'name'
+type SortOrder = 'asc' | 'desc'
+
 export function Scanner() {
+  const navigate = useNavigate()
   const [market, setMarket] = useState('hs300')
-  const [threshold, setThreshold] = useState(80)
+  const [threshold, setThreshold] = useState(70)
   const [isScanning, setIsScanning] = useState(false)
   const [progress, setProgress] = useState({ completed: 0, total: 0, percent: 0 })
   const [results, setResults] = useState<ScanResult[]>([])
+  const [sortField, setSortField] = useState<SortField>('rank')
+  const [sortOrder, setSortOrder] = useState<SortOrder>('asc')
 
   const startScan = async () => {
     setIsScanning(true)
@@ -83,11 +90,85 @@ export function Scanner() {
     }
   }
 
+  const handleRowClick = (tsCode: string) => {
+    navigate(`/analysis/${tsCode}`)
+  }
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortField(field)
+      setSortOrder(field === 'name' ? 'asc' : 'desc')
+    }
+  }
+
+  const sortedResults = [...results].sort((a, b) => {
+    let aVal: number | string = a[sortField]
+    let bVal: number | string = b[sortField]
+    
+    if (typeof aVal === 'string' && typeof bVal === 'string') {
+      return sortOrder === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal)
+    }
+    
+    const numA = Number(aVal)
+    const numB = Number(bVal)
+    return sortOrder === 'asc' ? numA - numB : numB - numA
+  })
+
+  const exportResults = () => {
+    if (results.length === 0) return
+    
+    const csv = [
+      ['排名', '代码', '名称', '综合评分', '基本面', '技术面', '资金面', '预测方向', '风险等级'].join(','),
+      ...results.map(r => [
+        r.rank,
+        r.ts_code,
+        r.name,
+        r.composite_score,
+        r.fundamental_score,
+        r.technical_score,
+        r.capital_score,
+        r.direction,
+        r.risk_level
+      ].join(','))
+    ].join('\n')
+    
+    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `scan_${market}_${new Date().toISOString().slice(0, 10)}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
   const getScoreColor = (score: number) => {
     if (score >= 70) return 'text-red-600'
     if (score >= 50) return 'text-orange-500'
     return 'text-green-600'
   }
+
+  const SortIcon = ({ field }: { field: SortField }) => {
+    if (sortField !== field) {
+      return <ArrowUpDown className="h-3 w-3 ml-1 opacity-40" />
+    }
+    return sortOrder === 'asc' 
+      ? <ChevronUp className="h-3 w-3 ml-1" />
+      : <ChevronDown className="h-3 w-3 ml-1" />
+  }
+
+  const SortableHeader = ({ field, children, className }: { field: SortField, children: React.ReactNode, className?: string }) => (
+    <th 
+      className={cn("pb-2 cursor-pointer hover:text-gray-900 select-none", className)}
+      onClick={() => handleSort(field)}
+    >
+      <div className="flex items-center">
+        {children}
+        <SortIcon field={field} />
+      </div>
+    </th>
+  )
 
   return (
     <div className="space-y-6">
@@ -137,7 +218,7 @@ export function Scanner() {
                   className="w-20"
                   disabled={isScanning}
                 />
-                <span className="text-gray-500">分</span>
+                <span className="text-gray-500">分以上</span>
               </div>
             </div>
 
@@ -182,51 +263,62 @@ export function Scanner() {
       {/* 结果 */}
       {results.length > 0 && (
         <Card>
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="text-base">
               扫描结果（共 {results.length} 只符合条件）
             </CardTitle>
+            <Button variant="outline" size="sm" onClick={exportResults}>
+              <Download className="mr-1 h-4 w-4" />
+              导出 CSV
+            </Button>
           </CardHeader>
           <CardContent>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b text-left">
-                    <th className="pb-2">排名</th>
+                  <tr className="border-b text-left text-gray-500">
+                    <SortableHeader field="rank">排名</SortableHeader>
                     <th className="pb-2">代码</th>
-                    <th className="pb-2">名称</th>
-                    <th className="pb-2">综合评分</th>
-                    <th className="pb-2">基本面</th>
-                    <th className="pb-2">技术面</th>
-                    <th className="pb-2">资金面</th>
+                    <SortableHeader field="name">名称</SortableHeader>
+                    <SortableHeader field="composite_score">综合评分</SortableHeader>
+                    <SortableHeader field="fundamental_score">基本面</SortableHeader>
+                    <SortableHeader field="technical_score">技术面</SortableHeader>
+                    <SortableHeader field="capital_score">资金面</SortableHeader>
                     <th className="pb-2">预测方向</th>
                     <th className="pb-2">风险等级</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {results.map((stock) => (
-                    <tr key={stock.ts_code} className="border-b hover:bg-gray-50">
-                      <td className="py-2">{stock.rank}</td>
-                      <td className="py-2 font-mono">{stock.ts_code.split('.')[0]}</td>
-                      <td className="py-2 font-medium">{stock.name}</td>
-                      <td className={cn('py-2 font-bold', getScoreColor(stock.composite_score))}>
+                  {sortedResults.map((stock) => (
+                    <tr 
+                      key={stock.ts_code} 
+                      className="border-b hover:bg-gray-50 cursor-pointer transition-colors"
+                      onClick={() => handleRowClick(stock.ts_code)}
+                    >
+                      <td className="py-3">{stock.rank}</td>
+                      <td className="py-3 font-mono">{stock.ts_code.split('.')[0]}</td>
+                      <td className="py-3 font-medium">{stock.name}</td>
+                      <td className={cn('py-3 font-bold', getScoreColor(stock.composite_score))}>
                         {stock.composite_score}
                       </td>
-                      <td className={cn('py-2', getScoreColor(stock.fundamental_score))}>
+                      <td className={cn('py-3', getScoreColor(stock.fundamental_score))}>
                         {stock.fundamental_score}
                       </td>
-                      <td className={cn('py-2', getScoreColor(stock.technical_score))}>
+                      <td className={cn('py-3', getScoreColor(stock.technical_score))}>
                         {stock.technical_score}
                       </td>
-                      <td className={cn('py-2', getScoreColor(stock.capital_score))}>
+                      <td className={cn('py-3', getScoreColor(stock.capital_score))}>
                         {stock.capital_score}
                       </td>
-                      <td className="py-2">
-                        <Badge variant={stock.direction.includes('多') ? 'default' : 'secondary'}>
+                      <td className="py-3">
+                        <Badge 
+                          variant={stock.direction.includes('多') ? 'default' : 'secondary'}
+                          className={stock.direction.includes('多') ? 'bg-red-500' : stock.direction.includes('空') ? 'bg-green-600' : ''}
+                        >
                           {stock.direction}
                         </Badge>
                       </td>
-                      <td className="py-2">
+                      <td className="py-3">
                         <Badge
                           variant={
                             stock.risk_level === '高风险'
@@ -244,6 +336,10 @@ export function Scanner() {
                 </tbody>
               </table>
             </div>
+            
+            <p className="mt-4 text-xs text-gray-400 text-center">
+              点击任意行查看详细分析
+            </p>
           </CardContent>
         </Card>
       )}

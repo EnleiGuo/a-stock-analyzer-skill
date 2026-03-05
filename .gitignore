@@ -30,3 +30,9 @@ reports/CLAUDE.md
 # Docs plans (internal working docs)
 docs/plans/
 docs/.DS_Store
+
+# Environment variables
+.env
+.env.local
+.env.production
+.env.development

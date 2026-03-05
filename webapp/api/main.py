@@ -9,17 +9,20 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from config import settings
 from routers import stocks, analysis, reports, scanner
-
+from services.stock_service import stock_service
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """应用生命周期管理"""
     # 启动时
     print(f"🚀 A股分析 API 启动 | 环境: {settings.ENV}")
+    # 预加载股票列表缓存
+    print("📦 预加载股票列表缓存...")
+    await stock_service.preload_cache()
+    print("✅ 股票列表缓存已就绪")
     yield
     # 关闭时
     print("👋 A股分析 API 关闭")
-
 
 app = FastAPI(
     title="A股深度分析系统 API",

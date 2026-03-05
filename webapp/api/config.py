@@ -1,6 +1,7 @@
 """
 配置管理
 """
+from __future__ import annotations
 
 import os
 import sys
@@ -24,12 +25,13 @@ class Settings(BaseSettings):
     ]
     
     # Tushare API
-    TUSHARE_TOKEN: str = "TUSHARE_TOKEN_PLACEHOLDER"
+    TUSHARE_TOKEN: str = ""
     
     # 豆包 AI API
-    DOUBAO_API_KEY: str = "DOUBAO_API_KEY_PLACEHOLDER"
+    DOUBAO_API_KEY: str = ""
     DOUBAO_ENDPOINT: str = "https://ark.cn-beijing.volces.com/api/v3/chat/completions"
     DOUBAO_MODEL: str = "doubao-seed-2-0-pro-260215"
+
     
     # 路径配置
     BASE_DIR: Path = Path(__file__).parent.parent.parent  # a-stock-analyzer/

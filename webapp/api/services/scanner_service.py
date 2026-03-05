@@ -1,6 +1,7 @@
 """
 批量扫描服务
 """
+from __future__ import annotations
 
 import asyncio
 from datetime import datetime

@@ -2,6 +2,7 @@
 股票查询路由
 /api/stocks/*
 """
+from __future__ import annotations
 
 from fastapi import APIRouter, Query, HTTPException
 from pydantic import BaseModel

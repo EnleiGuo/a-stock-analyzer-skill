@@ -4,6 +4,7 @@
 """
 
 import asyncio
+import json
 from typing import Optional
 from fastapi import APIRouter, HTTPException, BackgroundTasks
 from fastapi.responses import StreamingResponse
@@ -105,7 +106,7 @@ async def stream_analysis(task_id: str):
             if not task:
                 yield {
                     "event": "error",
-                    "data": {"message": "任务不存在"}
+                    "data": json.dumps({"message": "任务不存在"}, ensure_ascii=False)
                 }
                 break
             
@@ -115,10 +116,10 @@ async def stream_analysis(task_id: str):
             if current_progress > last_progress:
                 yield {
                     "event": "progress",
-                    "data": {
+                    "data": json.dumps({
                         "step": task.get("message", "处理中"),
                         "progress": current_progress,
-                    }
+                    }, ensure_ascii=False)
                 }
                 last_progress = current_progress
             
@@ -126,7 +127,7 @@ async def stream_analysis(task_id: str):
             if task["status"] == "completed":
                 yield {
                     "event": "complete",
-                    "data": task.get("result", {})
+                    "data": json.dumps(task.get("result", {}), ensure_ascii=False, default=str)
                 }
                 break
             
@@ -134,7 +135,7 @@ async def stream_analysis(task_id: str):
             if task["status"] == "failed":
                 yield {
                     "event": "error",
-                    "data": {"message": task.get("message", "分析失败")}
+                    "data": json.dumps({"message": task.get("message", "分析失败")}, ensure_ascii=False)
                 }
                 break
             

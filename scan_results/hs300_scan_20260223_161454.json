@@ -1,0 +1,55 @@
+{
+  "scan_time": "2026-02-23 16:14:54",
+  "threshold": 80,
+  "total_scanned": 3,
+  "total_analyzed": 3,
+  "total_matched": 0,
+  "duration_seconds": 8,
+  "results": [
+    {
+      "ts_code": "300150.SZ",
+      "name": "世纪瑞尔",
+      "composite_score": 61.6,
+      "fundamental_score": 54.4,
+      "technical_score": 81.5,
+      "capital_score": 45.4,
+      "prediction": {
+        "direction": "看涨",
+        "target_low": 5.79,
+        "target_high": 6.08,
+        "risk_level": "中等风险"
+      },
+      "rank": 1
+    },
+    {
+      "ts_code": "300271.SZ",
+      "name": "华宇软件",
+      "composite_score": 59.6,
+      "fundamental_score": 44.5,
+      "technical_score": 83.8,
+      "capital_score": 49.9,
+      "prediction": {
+        "direction": "看涨",
+        "target_low": 7.89,
+        "target_high": 8.21,
+        "risk_level": "中等风险"
+      },
+      "rank": 2
+    },
+    {
+      "ts_code": "300016.SZ",
+      "name": "北陆药业",
+      "composite_score": 52.1,
+      "fundamental_score": 60.6,
+      "technical_score": 46.9,
+      "capital_score": 45.7,
+      "prediction": {
+        "direction": "震荡整理",
+        "target_low": 9.4,
+        "target_high": 10.62,
+        "risk_level": "高风险"
+      },
+      "rank": 3
+    }
+  ]
+}
